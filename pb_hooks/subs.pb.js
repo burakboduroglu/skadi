@@ -7,11 +7,14 @@
 // GET /api/subs/summary
 //
 // Everything the Glance widget needs, pre-computed, so the Go template stays a
-// dumb renderer. Intentionally unauthenticated: Caddy returns 404 for
-// /api/subs/* on the public path, and Glance reaches PocketBase directly on
-// 127.0.0.1:8090, so this route has no route to the outside world.
+// dumb renderer. Intentionally unauthenticated: Caddy returns 404 for this exact
+// path, and Glance reaches PocketBase directly on 127.0.0.1:8090, so the route
+// has no path to the outside world.
 routerAdd("GET", "/api/subs/summary", (e) => {
   const lib = require(`${__hooks}/lib/subs.js`)
+
+  // Glance polls this every 30 minutes, which is what keeps charge dates moving.
+  lib.rollForward(e.app)
 
   const fx = lib.rates(e.app)
   const records = e.app.findRecordsByFilter(
@@ -22,8 +25,7 @@ routerAdd("GET", "/api/subs/summary", (e) => {
     0
   )
 
-  const now = new Date()
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  const today = lib.startOfTodayUTC()
 
   let monthlyGross = 0
   let monthlyCashback = 0
@@ -47,14 +49,11 @@ routerAdd("GET", "/api/subs/summary", (e) => {
       monthlyCashback += lib.monthly(cashbackTRY || 0, cycle)
     }
 
-    const rawDate = r.getString("next_charge")
+    const d = lib.parseDate(r.getString("next_charge"))
     let days = null
-    if (rawDate) {
-      const d = new Date(rawDate.replace(" ", "T"))
-      if (!isNaN(d.getTime())) {
-        const chargeDay = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
-        days = Math.round((chargeDay - today) / 86400000)
-      }
+    if (d) {
+      const charge = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+      days = Math.round((charge - today) / 86400000)
     }
 
     if (days !== null && days <= 45) {
@@ -96,24 +95,31 @@ routerAdd("GET", "/api/subs/summary", (e) => {
 // FX source would let the form and the dashboard disagree about the same total.
 // Superuser-only, so this one stays reachable from outside.
 routerAdd("GET", "/api/subs/rates", (e) => {
-  const fx = require(`${__hooks}/lib/subs.js`).rates(e.app)
+  const lib = require(`${__hooks}/lib/subs.js`)
+
+  // Also rolled here: the form lists records through the collection API, which
+  // runs no hook of ours, so this is the form's only chance to move a stale date.
+  const moved = lib.rollForward(e.app)
+
+  const fx = lib.rates(e.app)
   return e.json(200, {
     base: "TRY",
     rates: fx.rates,
     date: fx.date ? fx.date.substring(0, 10) : null,
-    stale: fx.stale
+    stale: fx.stale,
+    rolled: moved
   })
 }, $apis.requireSuperuserAuth())
 
-// Resolve a Google Play link to its icon whenever logo_url is left empty.
+// Fill name and logo from a Google Play link and keep anchor_day in step.
 // The helper lives in lib because a hook callback runs in an isolated runtime
 // and cannot reference a function defined at the top level of this file.
 onRecordCreateRequest((e) => {
-  require(`${__hooks}/lib/subs.js`).applyLogo(e.record)
+  require(`${__hooks}/lib/subs.js`).applyDerived(e.record)
   e.next()
 }, "subscriptions")
 
 onRecordUpdateRequest((e) => {
-  require(`${__hooks}/lib/subs.js`).applyLogo(e.record)
+  require(`${__hooks}/lib/subs.js`).applyDerived(e.record)
   e.next()
 }, "subscriptions")

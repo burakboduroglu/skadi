@@ -2,76 +2,131 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d1117">
 <title>Abonelikler</title>
 <style>
   :root {
-    --bg: #0d1117; --panel: #161b22; --line: #262d36; --text: #e6edf3;
-    --muted: #8b949e; --accent: #58a6ff; --pos: #3fb950; --neg: #f85149;
+    --bg: #0d1117; --panel: #161b22; --raise: #1c232c; --line: #262d36;
+    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+    --pos: #3fb950; --neg: #f85149;
+    --radius: 14px;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.5 ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+    font: 15px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: env(safe-area-inset-bottom);
   }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
-  h1 { font-size: 20px; margin: 0; }
-  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 20px 16px 96px; }
+
+  h1 { font-size: 19px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+
   button {
-    background: var(--accent); color: #06111f; border: 0; border-radius: 6px;
-    padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer;
+    background: var(--accent); color: #06111f; border: 0; border-radius: 10px;
+    padding: 10px 16px; font: inherit; font-weight: 600; cursor: pointer;
+    min-height: 44px;
   }
-  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 400; }
-  button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 400; }
+  button:active { transform: scale(.98); }
+  button.ghost { background: var(--raise); color: var(--text); font-weight: 500; }
+  button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 500; }
+
   input, select, textarea {
     width: 100%; background: var(--bg); color: var(--text);
-    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: inherit;
+    border: 1px solid var(--line); border-radius: 10px;
+    /* 16px keeps iOS Safari from zooming the page on focus. */
+    padding: 11px 12px; font: inherit; font-size: 16px; min-height: 44px;
   }
-  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-  .field { margin-bottom: 12px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-  .totals { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 20px; }
-  .totals div span { display: block; font-size: 12px; color: var(--muted); }
-  .totals div b { font-size: 22px; font-weight: 600; }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+  }
+  textarea { min-height: 66px; resize: vertical; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+  .field { margin-bottom: 13px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; gap: 0; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+
+  .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 18px 16px; margin-bottom: 8px; }
+  .totals div { text-align: center; }
+  .totals span { display: block; font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+  .totals b { font-size: 21px; font-weight: 650; letter-spacing: -0.02em; }
+  @media (max-width: 560px) {
+    .totals { grid-template-columns: 1fr 1fr; gap: 16px 4px; }
+    .totals b { font-size: 19px; }
+  }
+
   .row {
-    display: flex; align-items: center; gap: 12px; padding: 12px;
-    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 13px; padding: 13px 16px;
+    border-top: 1px solid var(--line); cursor: pointer;
   }
-  .row:last-child { border-bottom: 0; }
-  .row img { width: 32px; height: 32px; border-radius: 7px; flex: none; background: var(--line); }
+  .row:first-child { border-top: 0; }
+  .row:active { background: var(--raise); }
+  .row img { width: 38px; height: 38px; border-radius: 9px; flex: none; background: var(--raise); object-fit: cover; }
   .row .meta { flex: 1; min-width: 0; }
-  .row .meta b { display: block; }
-  .row .meta small { color: var(--muted); }
+  .row .meta b { display: block; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .meta small { color: var(--muted); font-size: 12.5px; }
   .row .amt { text-align: right; white-space: nowrap; }
-  .row .amt small { display: block; color: var(--muted); }
-  .paused { opacity: .5; }
+  .row .amt b { font-weight: 600; }
+  .row .amt small { display: block; color: var(--pos); font-size: 12px; }
+  .row.off { opacity: .45; }
+
   dialog {
     background: var(--panel); color: var(--text); border: 1px solid var(--line);
-    border-radius: 12px; padding: 20px; width: min(560px, 92vw);
+    border-radius: var(--radius); padding: 0; width: min(560px, calc(100vw - 32px));
+    max-height: calc(100dvh - 48px); overflow: hidden;
   }
-  dialog::backdrop { background: #000a; }
-  .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  dialog::backdrop { background: #000b; backdrop-filter: blur(2px); }
+  .dlg-body { padding: 20px; overflow-y: auto; max-height: calc(100dvh - 190px); }
+  .dlg-foot {
+    display: flex; gap: 8px; justify-content: flex-end; padding: 14px 20px;
+    border-top: 1px solid var(--line); background: var(--panel);
+  }
+  /* On phones the dialog becomes a bottom sheet: thumb-reachable, full width. */
+  @media (max-width: 560px) {
+    dialog {
+      width: 100vw; max-width: 100vw; margin: 0 0 0 0; position: fixed;
+      bottom: 0; left: 0; top: auto; border-radius: 18px 18px 0 0;
+      border-bottom: 0; max-height: 92dvh;
+    }
+    .dlg-body { max-height: calc(92dvh - 150px); }
+    .dlg-foot { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+  }
+
+  details { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 12px; }
+  summary {
+    cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 500;
+    margin-bottom: 12px; list-style: none; user-select: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸ "; }
+  details[open] summary::before { content: "▾ "; }
+
   .err { color: var(--neg); font-size: 13px; min-height: 18px; }
-  .note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .note { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+  .empty { padding: 32px 16px; text-align: center; color: var(--muted); }
   .hidden { display: none !important; }
+  .logo-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .logo-preview img { width: 34px; height: 34px; border-radius: 8px; background: var(--raise); }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- Login -->
-  <div id="login" class="panel hidden" style="max-width:380px;margin:12vh auto">
-    <h1 style="margin-bottom:16px">Abonelikler</h1>
+  <div id="login" class="panel hidden" style="max-width:400px;margin:12vh auto;padding:22px">
+    <h1 style="margin-bottom:18px">Abonelikler</h1>
     <div class="field"><label>E-posta</label><input id="email" type="email" autocomplete="username"></div>
     <div class="field"><label>Parola</label><input id="password" type="password" autocomplete="current-password"></div>
     <p class="err" id="loginErr"></p>
     <button id="loginBtn" style="width:100%">Giriş</button>
-    <p class="note">PocketBase superuser hesabın ile giriş yapılır.</p>
+    <p class="note">PocketBase superuser hesabınla giriş yapılır.</p>
   </div>
 
-  <!-- App -->
   <div id="app" class="hidden">
     <header>
       <h1>Abonelikler</h1>
@@ -81,51 +136,76 @@
       </div>
     </header>
 
-    <div class="totals panel">
+    <div class="panel totals">
       <div><span>Aylık brüt</span><b id="tGross">—</b></div>
       <div><span>Cashback</span><b id="tCash" style="color:var(--pos)">—</b></div>
       <div><span>Aylık net</span><b id="tNet">—</b></div>
       <div><span>Yıllık net</span><b id="tYear">—</b></div>
     </div>
-    <p class="note" id="fxNote" style="margin:-12px 0 20px"></p>
+    <p class="note" id="fxNote" style="margin:0 4px 18px"></p>
 
     <div class="panel" id="list"></div>
   </div>
 </div>
 
 <dialog id="dlg">
-  <h1 id="dlgTitle" style="margin-bottom:16px">Abonelik</h1>
-  <div class="field"><label>Ad *</label><input id="f_name"></div>
-  <div class="grid">
-    <div class="field"><label>Tutar *</label><input id="f_amount" type="number" step="0.01" min="0"></div>
-    <div class="field"><label>Para birimi *</label><select id="f_currency">
-      <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+  <div class="dlg-body">
+    <h1 id="dlgTitle" style="margin-bottom:18px">Yeni abonelik</h1>
+
+    <div class="field">
+      <label>Google Play linki</label>
+      <input id="f_vendor_url" inputmode="url" placeholder="https://play.google.com/store/apps/details?id=...">
+      <p class="note">Yapıştır ve kaydet — ad ve logo listeden otomatik çekilir.</p>
+    </div>
+
+    <div class="field">
+      <label>Ad</label>
+      <input id="f_name" placeholder="Play linki verdiysen boş bırakabilirsin">
+    </div>
+
+    <div class="grid">
+      <div class="field"><label>Tutar *</label>
+        <input id="f_amount" type="number" inputmode="decimal" step="0.01" min="0"></div>
+      <div class="field"><label>Para birimi</label><select id="f_currency">
+        <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+    </div>
+
+    <div class="grid">
+      <div class="field"><label>Periyot</label><select id="f_cycle">
+        <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
+        <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
+      <div class="field"><label>Sonraki ödeme *</label><input id="f_next_charge" type="date"></div>
+    </div>
+
+    <div class="field">
+      <label>Cashback — her ödemede geri gelen tutar</label>
+      <input id="f_cashback" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
+    </div>
+
+    <details id="more">
+      <summary>Diğer alanlar</summary>
+      <div class="grid">
+        <div class="field"><label>Kategori</label><select id="f_category">
+          <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
+          <option>Bulut</option><option>Finans</option><option>Sağlık</option><option>Eğitim</option>
+          <option>Diğer</option></select></div>
+        <div class="field"><label>Durum</label><select id="f_status">
+          <option value="active">Aktif</option><option value="paused">Duraklatıldı</option>
+          <option value="cancelled">İptal</option></select></div>
+      </div>
+      <div class="field"><label>Ödeme yöntemi</label>
+        <input id="f_payment_method" placeholder="Örn. Garanti Bonus"></div>
+      <div class="field"><label>Logo adresi</label>
+        <input id="f_logo_url" inputmode="url" placeholder="Boş bırak — Play linkinden bulunur">
+        <div class="logo-preview hidden" id="logoPreview"><img id="logoImg" alt=""><span class="note" style="margin:0">Kayıtlı logo</span></div>
+      </div>
+      <div class="field"><label>Not</label><textarea id="f_notes" rows="2"></textarea></div>
+    </details>
+
+    <p class="err" id="dlgErr"></p>
   </div>
-  <div class="grid">
-    <div class="field"><label>Cashback (her ödemede geri gelen)</label><input id="f_cashback" type="number" step="0.01" min="0" placeholder="0"></div>
-    <div class="field"><label>Periyot *</label><select id="f_cycle">
-      <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
-      <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
-  </div>
-  <div class="grid">
-    <div class="field"><label>Sonraki ödeme *</label><input id="f_next_charge" type="date"></div>
-    <div class="field"><label>Durum *</label><select id="f_status">
-      <option value="active">Aktif</option><option value="paused">Duraklatıldı</option>
-      <option value="cancelled">İptal</option></select></div>
-  </div>
-  <div class="grid">
-    <div class="field"><label>Kategori</label><select id="f_category">
-      <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
-      <option>Bulut</option><option>Finans</option><option>Sağlık</option><option>Eğitim</option>
-      <option>Diğer</option></select></div>
-    <div class="field"><label>Ödeme yöntemi</label><input id="f_payment_method" placeholder="Örn. Garanti Bonus"></div>
-  </div>
-  <div class="field"><label>Google Play / site linki</label><input id="f_vendor_url" placeholder="https://play.google.com/store/apps/details?id=..."></div>
-  <div class="field"><label>Logo adresi</label><input id="f_logo_url" placeholder="Boş bırak — Play linkinden otomatik bulunur">
-    <p class="note">Play linki verdiysen burayı boş bırak; kayıtta ikon otomatik çözülür.</p></div>
-  <div class="field"><label>Not</label><textarea id="f_notes" rows="2"></textarea></div>
-  <p class="err" id="dlgErr"></p>
-  <div class="actions">
+
+  <div class="dlg-foot">
     <button class="danger hidden" id="delBtn">Sil</button>
     <button class="ghost" id="cancelBtn">Vazgeç</button>
     <button id="saveBtn">Kaydet</button>
@@ -142,7 +222,7 @@ const CYCLE_TR = { weekly: "haftalık", monthly: "aylık", quarterly: "3 aylık"
 
 let token = localStorage.getItem("subs_token") || ""
 let items = []
-let fx = null          // EUR-based rates, or null when unavailable
+let fx = null          // TRY per one unit of each currency, or null when unavailable
 let editing = null
 
 const $ = id => document.getElementById(id)
@@ -189,7 +269,8 @@ async function login() {
 
 // Rates come from our own /api/subs/rates, not from the browser reaching an FX
 // API directly: Yahoo sends no CORS headers, and a second source would let this
-// page and the dashboard disagree about the same total.
+// page and the dashboard disagree about the same total. The same call rolls any
+// passed charge date forward, which is why it runs before the list loads.
 async function loadFx() {
   try {
     const body = await api(API + "/api/subs/rates")
@@ -217,19 +298,19 @@ function render() {
       else { gross += amtTRY / per; cash += (toTRY(s.cashback || 0, s.currency) || 0) / per }
     }
     const logo = s.logo_url
-      ? `<img src="${s.logo_url}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+      ? `<img src="${s.logo_url}" alt="" loading="lazy" onerror="this.removeAttribute('src')">`
       : `<img alt="">`
     const sub = [CYCLE_TR[s.cycle], s.next_charge ? s.next_charge.substring(0,10) : null,
                  s.payment_method, s.category].filter(Boolean).join(" · ")
-    const cb = s.cashback ? `<small style="color:var(--pos)">−${fmt(s.cashback)} cashback</small>` : ""
-    return `<div class="row ${s.status !== "active" ? "paused" : ""}" data-id="${s.id}">
+    const cb = s.cashback ? `<small>−${fmt(s.cashback)} cashback</small>` : ""
+    return `<div class="row ${s.status !== "active" ? "off" : ""}" data-id="${s.id}">
       ${logo}
       <div class="meta"><b>${s.name}</b><small>${sub}</small></div>
       <div class="amt"><b>${fmt(s.amount)} ${s.currency}</b>${cb}</div>
     </div>`
   }).join("")
 
-  $("list").innerHTML = html || `<p class="note" style="margin:8px">Henüz kayıt yok.</p>`
+  $("list").innerHTML = html || `<p class="empty">Henüz kayıt yok.<br>Üstteki <b>+ Ekle</b> ile başla.</p>`
   $("list").querySelectorAll(".row").forEach(el =>
     el.onclick = () => openDialog(items.find(i => i.id === el.dataset.id)))
 
@@ -245,16 +326,28 @@ function openDialog(item) {
   $("dlgTitle").textContent = item ? "Düzenle" : "Yeni abonelik"
   $("delBtn").classList.toggle("hidden", !item)
   $("dlgErr").textContent = ""
+  // Details start closed on a new record - that is the whole point of the fast
+  // path - and open when editing, where any field might be the one you came for.
+  $("more").open = !!item
+
   for (const f of FIELDS) {
     const el = $("f_" + f)
     let v = item ? (item[f] ?? "") : ""
     if (f === "next_charge" && v) v = String(v).substring(0, 10)
-    if (f === "status" && !item) v = "active"
-    if (f === "cycle" && !item) v = "monthly"
-    if (f === "currency" && !item) v = "TRY"
+    if (!item) {
+      if (f === "status") v = "active"
+      if (f === "cycle") v = "monthly"
+      if (f === "currency") v = "TRY"
+    }
     el.value = v
   }
+
+  const logo = item && item.logo_url
+  $("logoPreview").classList.toggle("hidden", !logo)
+  if (logo) $("logoImg").src = logo
+
   $("dlg").showModal()
+  if (!item) setTimeout(() => $("f_vendor_url").focus(), 60)
 }
 
 async function save() {
@@ -263,13 +356,16 @@ async function save() {
   for (const f of FIELDS) data[f] = $("f_" + f).value
   data.amount = parseFloat(data.amount || 0)
   data.cashback = parseFloat(data.cashback || 0)
-  if (!data.name || !data.next_charge) {
-    $("dlgErr").textContent = "Ad ve sonraki ödeme tarihi zorunlu."
-    return
-  }
+
+  // Name may be blank when a Play link can supply it; the server fills it in.
+  const playLink = data.vendor_url.indexOf("play.google.com") !== -1
+  if (!data.name && !playLink) { $("dlgErr").textContent = "Ad gerekli (ya da bir Play linki ver)."; return }
+  if (!data.next_charge) { $("dlgErr").textContent = "Sonraki ödeme tarihi gerekli."; return }
+  if (!data.amount) { $("dlgErr").textContent = "Tutar gerekli."; return }
+
   $("saveBtn").disabled = true
+  $("saveBtn").textContent = playLink && !data.name ? "Çekiliyor…" : "Kaydediliyor…"
   try {
-    // A Play link is resolved to an icon server-side, so this can take a moment.
     await api(editing ? `${COL}/${editing.id}` : COL, {
       method: editing ? "PATCH" : "POST",
       body: JSON.stringify(data)
@@ -280,6 +376,7 @@ async function save() {
     $("dlgErr").textContent = err.message
   } finally {
     $("saveBtn").disabled = false
+    $("saveBtn").textContent = "Kaydet"
   }
 }
 
@@ -305,6 +402,11 @@ async function start() {
   $("app").classList.remove("hidden")
   await loadFx()
   try { await load() } catch (err) { console.error(err) }
+  // ?add=1 is how the Glance widget's "+ Ekle" link lands straight on the form.
+  if (new URLSearchParams(location.search).get("add")) {
+    history.replaceState(null, "", location.pathname)
+    openDialog(null)
+  }
 }
 
 $("loginBtn").onclick = login
