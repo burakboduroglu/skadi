@@ -45,8 +45,15 @@
     outline: none; border-color: var(--accent);
   }
   textarea { min-height: 66px; resize: vertical; }
-  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+  /* A fixed label box keeps every cell the same height even when one label is
+     longer than its neighbour, so paired fields always line up. */
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px;
+          font-weight: 500; min-height: 17px; white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis; }
   .field { margin-bottom: 13px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 13px; }
+  .grid .field { margin-bottom: 13px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
 
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 
@@ -150,54 +157,44 @@
   <div class="dlg-body">
     <h1 id="dlgTitle" style="margin-bottom:18px">Yeni abonelik</h1>
 
-    <div class="field">
-      <label>Google Play linki</label>
-      <input id="f_vendor_url" inputmode="url" placeholder="https://play.google.com/store/apps/details?id=...">
-      <p class="note">Yapıştır ve kaydet — ad ve logo listeden otomatik çekilir.
-      Doğrudan bir resim adresi (.png, .jpg, .svg…) yapıştırırsan logo olarak alınır.</p>
-    </div>
+    <div class="grid">
+      <div class="field"><label>Link</label>
+        <input id="f_vendor_url" inputmode="url" placeholder="Play, Wikipedia veya resim"></div>
+      <div class="field"><label>Ad</label>
+        <input id="f_name" placeholder="Otomatik"></div>
 
-    <div class="field">
-      <label>Ad — Play linki verdiysen boş bırak</label>
-      <input id="f_name" placeholder="Otomatik doldurulur">
-    </div>
+      <div class="field"><label>Tutar *</label>
+        <input id="f_amount" type="number" inputmode="decimal" step="0.01" min="0"></div>
+      <div class="field"><label>Para birimi</label><select id="f_currency">
+        <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
 
-    <div class="field"><label>Tutar *</label>
-      <input id="f_amount" type="number" inputmode="decimal" step="0.01" min="0"></div>
+      <div class="field"><label>Periyot</label><select id="f_cycle">
+        <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
+        <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
+      <div class="field"><label>Sonraki ödeme *</label>
+        <input id="f_next_charge" type="date"></div>
 
-    <div class="field"><label>Para birimi</label><select id="f_currency">
-      <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+      <div class="field"><label>Cashback</label>
+        <input id="f_cashback" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+      <div class="field"><label>Ödeme yöntemi</label>
+        <input id="f_payment_method" placeholder="Örn. Garanti Bonus"></div>
 
-    <div class="field"><label>Periyot</label><select id="f_cycle">
-      <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
-      <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
-
-    <div class="field"><label>Sonraki ödeme *</label><input id="f_next_charge" type="date"></div>
-
-    <div class="field">
-      <label>Cashback — her ödemede geri gelen tutar</label>
-      <input id="f_cashback" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
-    </div>
-
-    <details id="more">
-      <summary>Diğer alanlar</summary>
       <div class="field"><label>Kategori</label><select id="f_category">
         <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
         <option>Bulut</option><option>Finans</option><option>Sağlık</option><option>Eğitim</option>
         <option>Diğer</option></select></div>
-
       <div class="field"><label>Durum</label><select id="f_status">
         <option value="active">Aktif</option><option value="paused">Duraklatıldı</option>
         <option value="cancelled">İptal</option></select></div>
-      <div class="field"><label>Ödeme yöntemi</label>
-        <input id="f_payment_method" placeholder="Örn. Garanti Bonus"></div>
-      <div class="field"><label>Logo adresi</label>
-        <input id="f_logo_url" inputmode="url" placeholder="Boş bırak — Play linkinden bulunur">
-        <p class="note">Herhangi bir resim adresi olabilir; Play'de olmayan servisler için buraya yapıştır.</p>
-        <div class="logo-preview hidden" id="logoPreview"><img id="logoImg" alt=""><span class="note" style="margin:0">Kayıtlı logo</span></div>
-      </div>
-      <div class="field"><label>Not</label><textarea id="f_notes" rows="2"></textarea></div>
-    </details>
+    </div>
+
+    <div class="field"><label>Not</label><textarea id="f_notes" rows="2"></textarea></div>
+
+    <div class="logo-preview hidden" id="logoPreview">
+      <img id="logoImg" alt=""><span class="note" style="margin:0">Logo</span>
+    </div>
+    <p class="note">Linki yapıştır, ad ve logo otomatik gelir. Logo yanlışsa linki değiştir —
+      her kayıtta yeniden çözülür. Cashback her ödemede geri gelen tutardır.</p>
 
     <p class="err" id="dlgErr"></p>
   </div>
@@ -212,8 +209,9 @@
 <script>
 const API = location.origin
 const COL = API + "/api/collections/subscriptions/records"
+// logo_url is derived from the link on the server and has no input of its own.
 const FIELDS = ["name","amount","currency","cashback","cycle","next_charge",
-                "status","category","payment_method","vendor_url","logo_url","notes"]
+                "status","category","payment_method","vendor_url","notes"]
 const CYCLE_MONTHS = { weekly: 12/52, monthly: 1, quarterly: 3, yearly: 12 }
 const CYCLE_TR = { weekly: "haftalık", monthly: "aylık", quarterly: "3 aylık", yearly: "yıllık" }
 
@@ -330,10 +328,6 @@ function openDialog(item) {
   $("dlgTitle").textContent = item ? "Düzenle" : "Yeni abonelik"
   $("delBtn").classList.toggle("hidden", !item)
   $("dlgErr").textContent = ""
-  // Details start closed on a new record - that is the whole point of the fast
-  // path - and open when editing, where any field might be the one you came for.
-  $("more").open = !!item
-
   for (const f of FIELDS) {
     const el = $("f_" + f)
     let v = item ? (item[f] ?? "") : ""
@@ -424,12 +418,12 @@ $("cancelBtn").onclick = () => $("dlg").close()
 // Live preview, so a pasted image URL is confirmed before saving rather than
 // after - a broken link is otherwise only visible once it is already stored.
 function previewLogo() {
-  const url = $("f_logo_url").value.trim() || $("f_vendor_url").value.trim()
-  const isImage = /\.(png|jpe?g|webp|svg|gif|avif)(\?|#|$)/i.test(url)
-  $("logoPreview").classList.toggle("hidden", !isImage)
-  if (isImage) $("logoImg").src = url
+  const url = $("f_vendor_url").value.trim()
+  // Only a direct image can be previewed here; a page URL is resolved server
+  // side on save, so there is nothing honest to show for it yet.
+  const isImage = /\.(png|jpe?g|webp|svg|gif|avif)(\?|#|$)/i.test(url) && !/File:/i.test(url)
+  if (isImage) { $("logoImg").src = url; $("logoPreview").classList.remove("hidden") }
 }
-$("f_logo_url").oninput = previewLogo
 $("f_vendor_url").oninput = previewLogo
 
 if (token) start(); else $("login").classList.remove("hidden")

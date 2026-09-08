@@ -191,64 +191,108 @@ function toTRY(amount, currency, fx) {
   return amount * fx[currency]
 }
 
-// --- google play ----------------------------------------------------------
+// --- link resolution ----------------------------------------------------
 
-// Read a Google Play listing's name and icon.
+// Turn whatever link the user pasted into a logo and, where possible, a name.
 //
-// The icon comes from og:image with a size suffix like "=s0-br30", rewritten to
-// "=s256" so one predictable size is stored. These play-lh URLs are
-// content-addressed - a vendor that rebrands uploads a new icon at a new URL and
-// the old one keeps resolving - so linking is durable here in a way that linking
-// to a vendor's own site would not be.
-function playMeta(url) {
-  if (!url || url.indexOf("play.google.com") === -1) return null
+// Three cases, in order, because the first two would be misread by the third:
+//   1. A Wikimedia file link. The "#/media/File:X.svg" fragment never reaches a
+//      server, so the page fetch alone cannot see which file was meant - but the
+//      pasted string still carries it, and the MediaWiki API resolves it to a
+//      rendered thumbnail (SVGs come back as PNG, which every browser draws).
+//   2. A direct image URL, detected from the response's own content type rather
+//      than from its extension, so an extensionless CDN link still works.
+//   3. Anything else: read og:image and og:title out of the HTML.
+const WIKI_FILE = /(?:File|Dosya|Datei):([^#?&/]+\.(?:svg|png|jpe?g|gif|webp))/i
+const WIKI_HOST = /https?:\/\/([a-z0-9-]+\.(?:wikipedia|wikimedia)\.org)/i
+
+function wikimediaFile(url) {
+  const file = url.match(WIKI_FILE)
+  if (!file) return null
+
+  const host = (url.match(WIKI_HOST) || [null, "en.wikipedia.org"])[1]
+  const api = "https://" + host + "/w/api.php?action=query&format=json" +
+    "&prop=imageinfo&iiprop=url&iiurlwidth=256&titles=File:" + encodeURIComponent(file[1])
+
+  const res = $http.send({ url: api, method: "GET", timeout: 20, headers: { "User-Agent": BROWSER_UA } })
+  if (res.statusCode !== 200) return null
+
+  const pages = res.json && res.json.query && res.json.query.pages
+  for (const key in pages) {
+    const info = pages[key].imageinfo
+    if (info && info[0]) return info[0].thumburl || info[0].url || null
+  }
+  return null
+}
+
+function headerValue(headers, name) {
+  if (!headers) return ""
+  const direct = headers[name] || headers[name.toLowerCase()]
+  if (!direct) return ""
+  return Array.isArray(direct) ? (direct[0] || "") : String(direct)
+}
+
+// Strip the site's own name off a page title: "Hetzner - Wikipedia" is a name
+// for a subscription, "Hetzner" is.
+function cleanTitle(raw) {
+  if (!raw) return null
+  return raw
+    .replace(/\s*[-–|]\s*(Apps on )?Google Play\s*$/i, "")
+    .replace(/\s*[-–|]\s*Wikipedia\s*$/i, "")
+    .trim() || null
+}
+
+function resolveLink(url) {
+  if (!url) return null
   try {
+    const fromWiki = wikimediaFile(url)
+    if (fromWiki) return { icon: fromWiki, title: null }
+
     const res = $http.send({
       url: url,
       method: "GET",
-      timeout: 20,
+      timeout: 25,
       headers: { "User-Agent": BROWSER_UA, "Accept-Language": "en-US,en;q=0.9" }
     })
     if (res.statusCode !== 200) return null
+
+    if (headerValue(res.headers, "Content-Type").indexOf("image/") === 0) {
+      return { icon: url, title: null }
+    }
 
     const html = toString(res.body)
     const icon = html.match(/<meta property="og:image" content="([^"]+)"/)
     const title = html.match(/<meta property="og:title" content="([^"]+)"/)
 
-    return {
-      icon: icon ? icon[1].replace(/=[^=\/]*$/, "=s256") : null,
-      title: title ? title[1].replace(/\s*[-–]\s*(Apps on )?Google Play\s*$/i, "").trim() : null
+    let iconUrl = icon ? icon[1] : null
+    // Play's og:image carries a size suffix like "=s0-br30"; pin it to one size.
+    if (iconUrl && iconUrl.indexOf("play-lh.googleusercontent.com") !== -1) {
+      iconUrl = iconUrl.replace(/=[^=\/]*$/, "=s256")
     }
+
+    return { icon: iconUrl, title: cleanTitle(title ? title[1] : null) }
   } catch (err) {
-    console.log("[subs] play lookup failed: " + err)
+    console.log("[subs] link resolve failed: " + err)
     return null
   }
 }
 
-// Fill in what the Play listing can supply and keep anchor_day in step with the
-// charge date. Wrapped so a Play markup change or a network blip degrades to
-// "no logo" instead of failing the save the user is trying to make.
-const IMAGE_URL = /\.(png|jpe?g|webp|svg|gif|avif)(\?|#|$)/i
-
+// Fill in what the link can supply and keep anchor_day in step with the charge
+// date. Wrapped so a markup change or a network blip degrades to "no logo"
+// instead of failing the save the user is trying to make.
 function applyDerived(record) {
   try {
-    let needsLogo = !record.getString("logo_url")
-    const needsName = !record.getString("name")
-
-    // A direct image URL pasted into the link field is a logo, not a vendor
-    // page. Accepting it here means it works from any entry path, not just from
-    // the one field on the form that happens to be labelled "logo".
-    const vendor = record.getString("vendor_url")
-    if (needsLogo && vendor && IMAGE_URL.test(vendor)) {
-      record.set("logo_url", vendor)
-      needsLogo = false
-    }
-
-    if (needsLogo || needsName) {
-      const meta = playMeta(record.getString("vendor_url"))
+    // The link is authoritative for the logo: re-resolved on every save, so
+    // pasting a better link is how you fix a wrong logo. A failed lookup leaves
+    // the existing logo alone rather than clearing it.
+    // The name is only ever filled in when blank - a name typed by hand outranks
+    // whatever a page calls itself.
+    const link = record.getString("vendor_url")
+    if (link) {
+      const meta = resolveLink(link)
       if (meta) {
-        if (needsLogo && meta.icon) record.set("logo_url", meta.icon)
-        if (needsName && meta.title) record.set("name", meta.title)
+        if (meta.icon) record.set("logo_url", meta.icon)
+        if (meta.title && !record.getString("name")) record.set("name", meta.title)
       }
     }
 
@@ -262,6 +306,6 @@ function applyDerived(record) {
 }
 
 module.exports = {
-  cycleMonths, monthly, rates, toTRY, playMeta, applyDerived, rollForward,
+  cycleMonths, monthly, rates, toTRY, resolveLink, applyDerived, rollForward,
   parseDate, startOfTodayUTC
 }
