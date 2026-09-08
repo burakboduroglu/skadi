@@ -24,6 +24,13 @@ Skadi tracks what you pay every month for the services you subscribe to, and wha
 
 That framing is the whole point. A dedicated subscription tracker means another container, another database, another volume in your backup, another process competing for RAM on a small box. If PocketBase is already running, all of that is redundant — the database, the auth, the HTTP server, the backup story and the admin UI are sitting there, and Skadi is roughly six hundred lines that use them.
 
+<div align="center">
+  <img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-list.png" alt="The list: totals, live rates, and every subscription with its own logo" width="760">
+  <br><br>
+  <img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-dialog.png" alt="Adding a subscription: paste a link, the name and logo resolve server-side" width="380">
+  <img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-menu.png" alt="Language and display currency, both stored per browser" width="380">
+</div>
+
 ## What it is
 
 You add a subscription by pasting a **link**. Google Play, a Wikipedia article, or a direct image URL — the server resolves it to a name and a logo, so a full entry is usually a link, an amount, and a date. It reads Google Play's `og:image` and `og:title`, resolves a Wikimedia `File:` link through the MediaWiki API, and takes a direct image URL at its own content type rather than guessing from the extension.
@@ -133,6 +140,18 @@ Saying this plainly is cheaper than you finding out:
 **PocketBase** for storage, auth, HTTP and backups. **JavaScript** in PocketBase's own hook runtime for the two endpoints, and one dependency-free HTML page for the UI — no framework, no bundler, no CSS library, no i18n runtime. **Bun** as the package manager. Glance is supported, not required, and nothing in the install depends on it.
 
 The name is Skaði, the Norse goddess of winter and the mountains, who took a settlement in compensation and chose by looking only at the feet. It seemed apt for something that makes you look at what you are actually paying.
+
+## Contributing
+
+Bug reports, logo-resolution failures and translation fixes are welcome; the
+things under *What it deliberately does not do* are not. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the shape of a change, and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for how we behave here.
+
+Security problems go through
+[a private advisory](https://github.com/burakboduroglu/skadi/security/advisories/new),
+never a public issue — [SECURITY.md](SECURITY.md) explains what Skadi assumes
+about its environment, including the two assumptions that fail open.
 
 ## License
 

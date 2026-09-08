@@ -64,13 +64,15 @@
   .menu button:hover { background: var(--raise); }
   .menu button.out { color: var(--neg); }
   .menu-sep { height: 1px; background: var(--line); margin: 6px 4px; }
+  /* A grid, not flex: both rows share one column track, so the language and
+     display selects are the same width whatever their longest option says. */
   .menu-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 4px 12px 4px 12px; font-size: 13px; color: var(--muted);
+    display: grid; grid-template-columns: 1fr 118px; align-items: center; gap: 10px;
+    padding: 5px 12px; font-size: 13px; color: var(--muted);
   }
   .menu-row select {
-    width: auto; height: 30px; line-height: 28px; font-size: 13px;
-    padding: 0 26px 0 8px; background-position: calc(100% - 14px) 13px, calc(100% - 9px) 13px;
+    width: 118px; height: 32px; line-height: 30px; font-size: 13px;
+    padding: 0 26px 0 8px; background-position: calc(100% - 14px) 14px, calc(100% - 9px) 14px;
   }
   button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 500; }
 
@@ -340,6 +342,15 @@ const FIELDS = ["name","amount","currency","cashback","cycle","next_charge",
                 "status","category","payment_method","vendor_url","notes"]
 const CYCLE_MONTHS = { weekly: 12/52, monthly: 1, quarterly: 3, yearly: 12 }
 const cycleName = c => t("c_" + c) || c
+
+// Category values are stored in Turkish because they are data. The select
+// translates its option text; the list has to translate the stored value back
+// the same way, or an English UI prints "Medya" in the subtitle.
+const CATEGORY_KEY = {
+  "Yazılım": "k_software", "Medya": "k_media", "Oyun": "k_games", "Bulut": "k_cloud",
+  "Finans": "k_finance", "Sağlık": "k_health", "Eğitim": "k_learning", "Diğer": "k_other"
+}
+const categoryName = c => (c && CATEGORY_KEY[c]) ? t(CATEGORY_KEY[c]) : c
 
 
 // Two dictionaries and one lookup - no i18n runtime for a page this size.
@@ -625,7 +636,7 @@ function render() {
       ? `<img src="${esc(s.logo_url)}" alt="" loading="lazy" onerror="this.removeAttribute('src')">`
       : `<img alt="">`
     const sub = [cycleName(s.cycle), s.next_charge ? s.next_charge.substring(0,10) : null,
-                 s.payment_method, s.category].filter(Boolean).map(esc).join(" · ")
+                 s.payment_method, categoryName(s.category)].filter(Boolean).map(esc).join(" · ")
     const cb = s.cashback ? `<small>−${fmt(s.cashback)} cashback</small>` : ""
     return `<div class="row ${s.status !== "active" ? "off" : ""}" data-id="${esc(s.id)}">
       ${logo}
