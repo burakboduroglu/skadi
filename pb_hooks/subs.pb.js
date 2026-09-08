@@ -89,6 +89,22 @@ routerAdd("GET", "/api/subs/summary", (e) => {
   })
 })
 
+// GET /api/subs/rates
+//
+// The entry form needs the same rates the widget uses. It cannot call Yahoo
+// itself - Yahoo sends no CORS headers - and having the browser use a second
+// FX source would let the form and the dashboard disagree about the same total.
+// Superuser-only, so this one stays reachable from outside.
+routerAdd("GET", "/api/subs/rates", (e) => {
+  const fx = require(`${__hooks}/lib/subs.js`).rates(e.app)
+  return e.json(200, {
+    base: "TRY",
+    rates: fx.rates,
+    date: fx.date ? fx.date.substring(0, 10) : null,
+    stale: fx.stale
+  })
+}, $apis.requireSuperuserAuth())
+
 // Resolve a Google Play link to its icon whenever logo_url is left empty.
 // The helper lives in lib because a hook callback runs in an isolated runtime
 // and cannot reference a function defined at the top level of this file.

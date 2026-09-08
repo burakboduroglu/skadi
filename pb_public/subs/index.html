@@ -187,22 +187,24 @@ async function login() {
   }
 }
 
-// Rates come straight from the browser: the summary route that Glance uses is
-// deliberately unreachable from outside, and this is a public CORS-enabled API.
+// Rates come from our own /api/subs/rates, not from the browser reaching an FX
+// API directly: Yahoo sends no CORS headers, and a second source would let this
+// page and the dashboard disagree about the same total.
 async function loadFx() {
   try {
-    const res = await fetch("https://api.frankfurter.dev/v1/latest?base=EUR&symbols=TRY,USD,GBP")
-    const body = await res.json()
-    fx = { ...body.rates, EUR: 1 }
-    $("fxNote").textContent = "Kur: " + body.date + " (ECB)"
+    const body = await api(API + "/api/subs/rates")
+    fx = body.rates
+    $("fxNote").textContent = "Kur: " + (body.date || "—") + " · Yahoo Finance" +
+      (body.stale ? " — güncellenemedi, son bilinen kur kullanıldı" : "")
   } catch (err) {
     fx = null
     $("fxNote").textContent = "Kur alınamadı — yabancı para tutarları toplama dahil edilmedi."
   }
 }
 
+// Rates are TRY per one unit of the currency.
 const toTRY = (amount, cur) =>
-  cur === "TRY" ? amount : (fx && fx[cur] && fx.TRY ? amount * (fx.TRY / fx[cur]) : null)
+  cur === "TRY" ? amount : (fx && fx[cur] ? amount * fx[cur] : null)
 
 function render() {
   let gross = 0, cash = 0, unknown = 0

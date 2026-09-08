@@ -1,7 +1,7 @@
 # Paste this widget into a column in /etc/glance/glance.yml.
 #
 # It reads PocketBase over loopback, so it needs no token and never leaves the
-# box. /api/subs/* is 404'd at the Caddy layer, which is what keeps this route
+# box. /api/subs/summary is 404'd at the Caddy layer, which is what keeps this route
 # private while still letting Glance read it.
 - type: custom-api
   title: Abonelikler

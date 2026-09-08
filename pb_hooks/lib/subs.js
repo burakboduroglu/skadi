@@ -20,10 +20,39 @@ function monthly(amount, cycle) {
   return (amount || 0) / cycleMonths(cycle)
 }
 
-const FX_URL = "https://api.frankfurter.dev/v1/latest?base=EUR&symbols=TRY,USD,GBP"
-const FX_MAX_AGE_MS = 12 * 60 * 60 * 1000
+// FX comes from Yahoo Finance, the same source Glance's `markets` widget already
+// uses on this box - one fewer third party to depend on - and it quotes the TRY
+// pairs directly, so no cross-rate arithmetic is needed.
+const YAHOO_CHART = "https://query1.finance.yahoo.com/v8/finance/chart/"
+const FX_SYMBOLS = { USD: "USDTRY=X", EUR: "EURTRY=X", GBP: "GBPTRY=X" }
+const FX_MAX_AGE_MS = 6 * 60 * 60 * 1000
+const FX_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " +
+  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
-// Read the cached EUR-based rates, refreshing them when older than 12 hours.
+// Rates are stored as TRY per one unit of the currency, so TRY is always 1.
+function fetchRates() {
+  const out = { TRY: 1 }
+  for (const cur in FX_SYMBOLS) {
+    const res = $http.send({
+      url: YAHOO_CHART + FX_SYMBOLS[cur] + "?range=1d&interval=1d",
+      method: "GET",
+      timeout: 20,
+      headers: { "User-Agent": FX_UA }
+    })
+    if (res.statusCode !== 200) {
+      throw new Error("fx: " + FX_SYMBOLS[cur] + " returned " + res.statusCode)
+    }
+    const result = res.json && res.json.chart && res.json.chart.result
+    const price = result && result[0] && result[0].meta && result[0].meta.regularMarketPrice
+    if (!price) {
+      throw new Error("fx: no price for " + FX_SYMBOLS[cur])
+    }
+    out[cur] = price
+  }
+  return out
+}
+
+// Read the cached rates, refreshing them when older than six hours.
 //
 // A failed refresh is never fatal: the last good rates are returned with
 // stale=true so the widget can say so. Showing a stale rate as if it were
@@ -31,7 +60,7 @@ const FX_MAX_AGE_MS = 12 * 60 * 60 * 1000
 function rates(app) {
   let rec = null
   try {
-    rec = app.findFirstRecordByFilter("fx_rates", "base = 'EUR'")
+    rec = app.findFirstRecordByFilter("fx_rates", "base = 'TRY'")
   } catch (err) {
     rec = null
   }
@@ -51,17 +80,12 @@ function rates(app) {
   }
 
   try {
-    const res = $http.send({ url: FX_URL, method: "GET", timeout: 20 })
-    if (res.statusCode !== 200 || !res.json || !res.json.rates) {
-      throw new Error("fx: unexpected response " + res.statusCode)
-    }
-    const fetched = res.json.rates
-    fetched.EUR = 1
+    const fetched = fetchRates()
 
     if (!rec) {
       const col = app.findCollectionByNameOrId("fx_rates")
       rec = new Record(col)
-      rec.set("base", "EUR")
+      rec.set("base", "TRY")
     }
     rec.set("rates", fetched)
     rec.set("fetched", now.toISOString().replace("T", " ").substring(0, 19) + "Z")
@@ -78,12 +102,12 @@ function rates(app) {
   }
 }
 
-// Convert an amount into TRY using EUR-based rates. Returns null when the
-// conversion cannot be done, so callers can report "unknown" instead of 0.
+// Convert an amount into TRY. Returns null when the conversion cannot be done,
+// so callers can report "unknown" instead of silently counting it as zero.
 function toTRY(amount, currency, fx) {
   if (currency === "TRY") return amount
-  if (!fx || !fx[currency] || !fx.TRY) return null
-  return amount * (fx.TRY / fx[currency])
+  if (!fx || !fx[currency]) return null
+  return amount * fx[currency]
 }
 
 const PLAY_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " +
