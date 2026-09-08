@@ -46,8 +46,8 @@ WIDGET = '''          - type: custom-api
                 <li class="flex items-center gap-10">
                   {{ $logo := .String "logo" }}
                   {{ if $logo }}
-                  <img class="shrink-0" src="{{ $logo }}" alt="" width="24" height="24"
-                       loading="lazy" style="border-radius: 5px">
+                  <img class="shrink-0" src="{{ $logo }}" alt="" loading="lazy"
+                       style="width: 24px; height: 24px; object-fit: contain; border-radius: 5px">
                   {{ end }}
                   <div class="grow text-truncate">
                     <div class="text-truncate">{{ .String "name" }}</div>

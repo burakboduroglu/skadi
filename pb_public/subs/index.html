@@ -114,7 +114,10 @@
   }
   .row:first-child { border-top: 0; }
   .row:active { background: var(--raise); }
-  .row img { width: 38px; height: 38px; border-radius: 9px; flex: none; background: var(--raise); object-fit: cover; }
+  /* contain, not cover: a wide vendor logo squeezed into a square box is
+     stretched, and cropped to fit is worse - it eats the wordmark. */
+  .row img { width: 38px; height: 38px; border-radius: 9px; flex: none;
+             background: var(--raise); object-fit: contain; padding: 3px; }
   .row .meta { flex: 1; min-width: 0; }
   .row .meta b { display: block; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row .meta small { color: var(--muted); font-size: 12.5px; }
@@ -175,7 +178,8 @@
   .pager span { font-size: 13px; color: var(--muted); min-width: 62px; text-align: center; }
   .hidden { display: none !important; }
   .logo-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-  .logo-preview img { width: 34px; height: 34px; border-radius: 8px; background: var(--raise); }
+  .logo-preview img { width: 34px; height: 34px; border-radius: 8px;
+                      background: var(--raise); object-fit: contain; padding: 3px; }
 </style>
 </head>
 <body>
