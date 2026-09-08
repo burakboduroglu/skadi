@@ -47,8 +47,6 @@
   textarea { min-height: 66px; resize: vertical; }
   label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
   .field { margin-bottom: 13px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
-  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; gap: 0; } }
 
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 
@@ -155,27 +153,26 @@
     <div class="field">
       <label>Google Play linki</label>
       <input id="f_vendor_url" inputmode="url" placeholder="https://play.google.com/store/apps/details?id=...">
-      <p class="note">Yapıştır ve kaydet — ad ve logo listeden otomatik çekilir.</p>
+      <p class="note">Yapıştır ve kaydet — ad ve logo listeden otomatik çekilir.
+      Doğrudan bir resim adresi (.png, .jpg, .svg…) yapıştırırsan logo olarak alınır.</p>
     </div>
 
     <div class="field">
-      <label>Ad</label>
-      <input id="f_name" placeholder="Play linki verdiysen boş bırakabilirsin">
+      <label>Ad — Play linki verdiysen boş bırak</label>
+      <input id="f_name" placeholder="Otomatik doldurulur">
     </div>
 
-    <div class="grid">
-      <div class="field"><label>Tutar *</label>
-        <input id="f_amount" type="number" inputmode="decimal" step="0.01" min="0"></div>
-      <div class="field"><label>Para birimi</label><select id="f_currency">
-        <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
-    </div>
+    <div class="field"><label>Tutar *</label>
+      <input id="f_amount" type="number" inputmode="decimal" step="0.01" min="0"></div>
 
-    <div class="grid">
-      <div class="field"><label>Periyot</label><select id="f_cycle">
-        <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
-        <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
-      <div class="field"><label>Sonraki ödeme *</label><input id="f_next_charge" type="date"></div>
-    </div>
+    <div class="field"><label>Para birimi</label><select id="f_currency">
+      <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+
+    <div class="field"><label>Periyot</label><select id="f_cycle">
+      <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
+      <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
+
+    <div class="field"><label>Sonraki ödeme *</label><input id="f_next_charge" type="date"></div>
 
     <div class="field">
       <label>Cashback — her ödemede geri gelen tutar</label>
@@ -184,19 +181,19 @@
 
     <details id="more">
       <summary>Diğer alanlar</summary>
-      <div class="grid">
-        <div class="field"><label>Kategori</label><select id="f_category">
-          <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
-          <option>Bulut</option><option>Finans</option><option>Sağlık</option><option>Eğitim</option>
-          <option>Diğer</option></select></div>
-        <div class="field"><label>Durum</label><select id="f_status">
-          <option value="active">Aktif</option><option value="paused">Duraklatıldı</option>
-          <option value="cancelled">İptal</option></select></div>
-      </div>
+      <div class="field"><label>Kategori</label><select id="f_category">
+        <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
+        <option>Bulut</option><option>Finans</option><option>Sağlık</option><option>Eğitim</option>
+        <option>Diğer</option></select></div>
+
+      <div class="field"><label>Durum</label><select id="f_status">
+        <option value="active">Aktif</option><option value="paused">Duraklatıldı</option>
+        <option value="cancelled">İptal</option></select></div>
       <div class="field"><label>Ödeme yöntemi</label>
         <input id="f_payment_method" placeholder="Örn. Garanti Bonus"></div>
       <div class="field"><label>Logo adresi</label>
         <input id="f_logo_url" inputmode="url" placeholder="Boş bırak — Play linkinden bulunur">
+        <p class="note">Herhangi bir resim adresi olabilir; Play'de olmayan servisler için buraya yapıştır.</p>
         <div class="logo-preview hidden" id="logoPreview"><img id="logoImg" alt=""><span class="note" style="margin:0">Kayıtlı logo</span></div>
       </div>
       <div class="field"><label>Not</label><textarea id="f_notes" rows="2"></textarea></div>
@@ -227,6 +224,13 @@ let editing = null
 
 const $ = id => document.getElementById(id)
 const fmt = n => new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(n)
+
+// Every field below reaches innerHTML, and `name` can arrive from a Google Play
+// listing's og:title rather than from this browser. Unescaped, a crafted title
+// would run script on this origin - where a superuser token sits in
+// localStorage. Escape at the point of interpolation, without exception.
+const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ESCAPES[c])
 
 async function api(url, opts = {}) {
   const res = await fetch(url, {
@@ -298,15 +302,15 @@ function render() {
       else { gross += amtTRY / per; cash += (toTRY(s.cashback || 0, s.currency) || 0) / per }
     }
     const logo = s.logo_url
-      ? `<img src="${s.logo_url}" alt="" loading="lazy" onerror="this.removeAttribute('src')">`
+      ? `<img src="${esc(s.logo_url)}" alt="" loading="lazy" onerror="this.removeAttribute('src')">`
       : `<img alt="">`
     const sub = [CYCLE_TR[s.cycle], s.next_charge ? s.next_charge.substring(0,10) : null,
-                 s.payment_method, s.category].filter(Boolean).join(" · ")
+                 s.payment_method, s.category].filter(Boolean).map(esc).join(" · ")
     const cb = s.cashback ? `<small>−${fmt(s.cashback)} cashback</small>` : ""
-    return `<div class="row ${s.status !== "active" ? "off" : ""}" data-id="${s.id}">
+    return `<div class="row ${s.status !== "active" ? "off" : ""}" data-id="${esc(s.id)}">
       ${logo}
-      <div class="meta"><b>${s.name}</b><small>${sub}</small></div>
-      <div class="amt"><b>${fmt(s.amount)} ${s.currency}</b>${cb}</div>
+      <div class="meta"><b>${esc(s.name)}</b><small>${sub}</small></div>
+      <div class="amt"><b>${fmt(s.amount)} ${esc(s.currency)}</b>${cb}</div>
     </div>`
   }).join("")
 
@@ -416,6 +420,17 @@ $("addBtn").onclick = () => openDialog(null)
 $("saveBtn").onclick = save
 $("delBtn").onclick = remove
 $("cancelBtn").onclick = () => $("dlg").close()
+
+// Live preview, so a pasted image URL is confirmed before saving rather than
+// after - a broken link is otherwise only visible once it is already stored.
+function previewLogo() {
+  const url = $("f_logo_url").value.trim() || $("f_vendor_url").value.trim()
+  const isImage = /\.(png|jpe?g|webp|svg|gif|avif)(\?|#|$)/i.test(url)
+  $("logoPreview").classList.toggle("hidden", !isImage)
+  if (isImage) $("logoImg").src = url
+}
+$("f_logo_url").oninput = previewLogo
+$("f_vendor_url").oninput = previewLogo
 
 if (token) start(); else $("login").classList.remove("hidden")
 </script>

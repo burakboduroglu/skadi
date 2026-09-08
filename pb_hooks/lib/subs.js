@@ -228,10 +228,21 @@ function playMeta(url) {
 // Fill in what the Play listing can supply and keep anchor_day in step with the
 // charge date. Wrapped so a Play markup change or a network blip degrades to
 // "no logo" instead of failing the save the user is trying to make.
+const IMAGE_URL = /\.(png|jpe?g|webp|svg|gif|avif)(\?|#|$)/i
+
 function applyDerived(record) {
   try {
-    const needsLogo = !record.getString("logo_url")
+    let needsLogo = !record.getString("logo_url")
     const needsName = !record.getString("name")
+
+    // A direct image URL pasted into the link field is a logo, not a vendor
+    // page. Accepting it here means it works from any entry path, not just from
+    // the one field on the form that happens to be labelled "logo".
+    const vendor = record.getString("vendor_url")
+    if (needsLogo && vendor && IMAGE_URL.test(vendor)) {
+      record.set("logo_url", vendor)
+      needsLogo = false
+    }
 
     if (needsLogo || needsName) {
       const meta = playMeta(record.getString("vendor_url"))
