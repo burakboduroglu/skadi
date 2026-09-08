@@ -133,6 +133,10 @@
   .err { color: var(--neg); font-size: 13px; min-height: 18px; }
   .note { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
   .empty { padding: 32px 16px; text-align: center; color: var(--muted); }
+  .pager { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
+  .pager button { min-width: 44px; height: 38px; padding: 0 12px; background: var(--raise); color: var(--text); font-weight: 500; }
+  .pager button:disabled { opacity: .35; cursor: default; }
+  .pager span { font-size: 13px; color: var(--muted); min-width: 62px; text-align: center; }
   .hidden { display: none !important; }
   .logo-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
   .logo-preview img { width: 34px; height: 34px; border-radius: 8px; background: var(--raise); }
@@ -168,6 +172,9 @@
     <p class="note" id="fxNote" style="margin:0 4px 18px"></p>
 
     <div class="panel" id="list"></div>
+    <div class="pager hidden" id="pager">
+      <button id="prevBtn">‹</button><span id="pageInfo"></span><button id="nextBtn">›</button>
+    </div>
   </div>
 </div>
 
@@ -383,13 +390,22 @@ async function removeCard(id) {
 function render() {
   let gross = 0, cash = 0, unknown = 0
 
-  const html = items.map(s => {
-    const per = CYCLE_MONTHS[s.cycle] || 1
+  // Totals are computed over every subscription, not over the visible page -
+  // a monthly cost that changes when you turn the page would be worthless.
+  for (const s of items) {
+    if (s.status !== "active") continue
     const amtTRY = toTRY(s.amount, s.currency)
-    if (s.status === "active") {
-      if (amtTRY === null) unknown++
-      else { gross += amtTRY / per; cash += (toTRY(s.cashback || 0, s.currency) || 0) / per }
-    }
+    if (amtTRY === null) { unknown++; continue }
+    const per = CYCLE_MONTHS[s.cycle] || 1
+    gross += amtTRY / per
+    cash += (toTRY(s.cashback || 0, s.currency) || 0) / per
+  }
+
+  const pages = Math.max(1, Math.ceil(items.length / PER_PAGE))
+  if (page > pages) page = pages
+  const visible = items.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
+  const html = visible.map(s => {
     const logo = s.logo_url
       ? `<img src="${esc(s.logo_url)}" alt="" loading="lazy" onerror="this.removeAttribute('src')">`
       : `<img alt="">`
@@ -412,6 +428,17 @@ function render() {
   $("tNet").textContent = fmt(gross - cash) + " ₺"
   $("tYear").textContent = fmt((gross - cash) * 12) + " ₺"
   if (unknown) $("fxNote").textContent += ` · ${unknown} kayıt kur olmadığı için toplama girmedi`
+
+  $("pager").classList.toggle("hidden", pages < 2)
+  $("pageInfo").textContent = `${page} / ${pages}`
+  $("prevBtn").disabled = page <= 1
+  $("nextBtn").disabled = page >= pages
+}
+
+function turnPage(delta) {
+  page += delta
+  render()
+  window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
 function openDialog(item) {
@@ -510,6 +537,8 @@ $("cancelBtn").onclick = () => $("dlg").close()
 $("cardsBtn").onclick = () => { $("cardsErr").textContent = ""; $("cardsDlg").showModal() }
 $("cardsClose").onclick = () => { $("cardsDlg").close(); fillCardSelect($("f_payment_method").value) }
 $("cardAdd").onclick = addCard
+$("prevBtn").onclick = () => turnPage(-1)
+$("nextBtn").onclick = () => turnPage(1)
 $("f_newcard").onkeydown = e => { if (e.key === "Enter") addCard() }
 
 // Live preview, so a pasted image URL is confirmed before saving rather than
