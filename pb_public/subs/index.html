@@ -6,6 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0d1117">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2358a6ff'/%3E%3Crect x='6' y='9' width='20' height='14' rx='3' fill='%230d1117'/%3E%3Crect x='6' y='13' width='20' height='3' fill='%2358a6ff'/%3E%3Crect x='9' y='18' width='7' height='2.5' rx='1.25' fill='%2358a6ff'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2358a6ff'/%3E%3Crect x='6' y='9' width='20' height='14' rx='3' fill='%230d1117'/%3E%3Crect x='6' y='13' width='20' height='3' fill='%2358a6ff'/%3E%3Crect x='9' y='18' width='7' height='2.5' rx='1.25' fill='%2358a6ff'/%3E%3C/svg%3E">
 <title>Abonelikler</title>
 <style>
   :root {
@@ -169,6 +171,7 @@
     background: var(--raise); border-radius: 8px; padding: 5px 10px;
   }
   .fxbar .sym { color: var(--muted); font-weight: 600; }
+  .fxbar .dot { color: var(--muted); opacity: .6; }
   .fxbar .val { font-weight: 600; font-variant-numeric: tabular-nums; }
   .fxbar .meta { margin-left: auto; color: var(--muted); font-size: 12px; }
   .fxbar .warn { color: var(--neg); }
@@ -401,7 +404,8 @@ function renderFx(unknown) {
     return
   }
   const chips = ["USD", "EUR", "GBP"].filter(c => fx[c]).map(c =>
-    `<span class="fx"><span class="sym">${SYMBOL[c]}</span><span class="val">${rate(fx[c])} ₺</span></span>`)
+    `<span class="fx"><span class="sym">${SYMBOL[c]}</span><span class="dot">•</span>` +
+    `<span class="val">${rate(fx[c])} ₺</span></span>`)
 
   const meta = []
   if (fxMeta.date) meta.push(fxMeta.date)
