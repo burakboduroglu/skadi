@@ -84,6 +84,9 @@ routerAdd("GET", "/api/subs/summary", (e) => {
     unconverted: unconverted,
     fx_date: fx.date ? fx.date.substring(0, 10) : null,
     fx_stale: fx.stale,
+    // Which currencies the cache actually yielded, so a conversion failure can
+    // be diagnosed from the response instead of from the logs.
+    fx_currencies: fx.rates ? Object.keys(fx.rates) : null,
     upcoming: upcoming
   })
 })

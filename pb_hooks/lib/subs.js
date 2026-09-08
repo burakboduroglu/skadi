@@ -148,13 +148,31 @@ function fetchRates() {
 function readRates(rec) {
   const raw = rec.get("rates")
   if (!raw) return null
-  if (typeof raw === "object") return raw
-  try {
-    return JSON.parse(typeof raw === "string" ? raw : toString(raw))
-  } catch (err) {
-    console.log("[subs] cached rates unreadable: " + err)
-    return null
+
+  // typeof is not enough to tell a usable object from PocketBase's raw JSON
+  // wrapper - both report "object" - so the test is whether the keys are
+  // actually there. Everything else gets decoded, from a string, from bytes, or
+  // by round-tripping, and whichever attempt yields TRY wins.
+  const usable = (v) => v && typeof v === "object" && typeof v.TRY !== "undefined" ? v : null
+
+  const direct = usable(raw)
+  if (direct) return direct
+
+  const candidates = []
+  if (typeof raw === "string") candidates.push(raw)
+  try { candidates.push(toString(raw)) } catch (err) {}
+  try { candidates.push(JSON.stringify(raw)) } catch (err) {}
+
+  for (const text of candidates) {
+    if (!text) continue
+    try {
+      const parsed = usable(JSON.parse(text))
+      if (parsed) return parsed
+    } catch (err) {}
   }
+
+  console.log("[subs] cached rates unreadable, refetching")
+  return null
 }
 
 // Read the cached rates, refreshing them when older than six hours.
