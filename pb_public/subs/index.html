@@ -33,10 +33,15 @@
   }
   button:active { transform: scale(.98); }
   button.ghost { background: var(--raise); color: var(--text); font-weight: 500; }
-  /* Header actions are siblings sitting side by side, so they get one size. */
-  .hdr-actions { display: flex; gap: 8px; }
-  .hdr-actions button { min-width: 98px; padding: 0 10px; }
-  @media (max-width: 400px) { .hdr-actions button { min-width: 0; flex: 1; } }
+  /* Header actions are siblings sitting side by side, so they get one size.
+     A grid rather than flex, so the four stay exactly equal in both layouts:
+     one row on a wide screen, two by two on a phone. */
+  .hdr-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+  .hdr-actions button { padding: 0 10px; white-space: nowrap; }
+  @media (max-width: 560px) {
+    header { flex-wrap: wrap; }
+    .hdr-actions { width: 100%; grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
+  }
   button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 500; }
 
   input, select, textarea {
@@ -159,6 +164,7 @@
       <div class="hdr-actions">
         <button id="addBtn">+ Ekle</button>
         <button class="ghost" id="cardsBtn">Kartlar</button>
+        <button class="ghost" id="dashBtn">Dashboard</button>
         <button class="ghost" id="logoutBtn">Çıkış</button>
       </div>
     </header>
@@ -537,6 +543,7 @@ $("cancelBtn").onclick = () => $("dlg").close()
 $("cardsBtn").onclick = () => { $("cardsErr").textContent = ""; $("cardsDlg").showModal() }
 $("cardsClose").onclick = () => { $("cardsDlg").close(); fillCardSelect($("f_payment_method").value) }
 $("cardAdd").onclick = addCard
+$("dashBtn").onclick = () => location.href = "https://glance.burakboduroglu.com.tr/"
 $("prevBtn").onclick = () => turnPage(-1)
 $("nextBtn").onclick = () => turnPage(1)
 $("f_newcard").onkeydown = e => { if (e.key === "Enter") addCard() }
