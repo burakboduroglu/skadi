@@ -33,6 +33,10 @@
   }
   button:active { transform: scale(.98); }
   button.ghost { background: var(--raise); color: var(--text); font-weight: 500; }
+  /* Header actions are siblings sitting side by side, so they get one size. */
+  .hdr-actions { display: flex; gap: 8px; }
+  .hdr-actions button { min-width: 98px; padding: 0 10px; }
+  @media (max-width: 400px) { .hdr-actions button { min-width: 0; flex: 1; } }
   button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 500; }
 
   input, select, textarea {
@@ -148,8 +152,9 @@
   <div id="app" class="hidden">
     <header>
       <h1>Abonelikler</h1>
-      <div style="display:flex;gap:8px">
+      <div class="hdr-actions">
         <button id="addBtn">+ Ekle</button>
+        <button class="ghost" id="cardsBtn">Kartlar</button>
         <button class="ghost" id="logoutBtn">Çıkış</button>
       </div>
     </header>
@@ -190,7 +195,7 @@
       <div class="field"><label>Cashback</label>
         <input id="f_cashback" type="number" inputmode="decimal" step="0.01" min="0"></div>
       <div class="field"><label>Kart</label>
-        <input id="f_payment_method"></div>
+        <select id="f_payment_method"></select></div>
 
       <div class="field"><label>Kategori</label><select id="f_category">
         <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
@@ -216,9 +221,23 @@
   </div>
 </dialog>
 
+<dialog id="cardsDlg">
+  <div class="dlg-body">
+    <h1 style="margin-bottom:18px">Kartlar</h1>
+    <div class="panel" id="cardList"></div>
+    <div class="field" style="margin-top:16px"><label>Yeni</label><input id="f_newcard"></div>
+    <p class="err" id="cardsErr"></p>
+  </div>
+  <div class="dlg-foot">
+    <button class="ghost" id="cardsClose">Kapat</button>
+    <button id="cardAdd">Ekle</button>
+  </div>
+</dialog>
+
 <script>
 const API = location.origin
 const COL = API + "/api/collections/subscriptions/records"
+const CARDS = API + "/api/collections/cards/records"
 // logo_url is derived from the link on the server and has no input of its own.
 const FIELDS = ["name","amount","currency","cashback","cycle","next_charge",
                 "status","category","payment_method","vendor_url","notes"]
@@ -299,6 +318,68 @@ async function loadFx() {
 const toTRY = (amount, cur) =>
   cur === "TRY" ? amount : (fx && fx[cur] ? amount * fx[cur] : null)
 
+async function loadCards() {
+  const body = await api(CARDS + "?perPage=200&sort=name")
+  cards = body.items
+  fillCardSelect()
+  renderCards()
+}
+
+// The select is rebuilt from the collection, so a card renamed in one place
+// cannot linger as a stale spelling in the other.
+function fillCardSelect(keep) {
+  const sel = $("f_payment_method")
+  sel.innerHTML = `<option value="">—</option>` +
+    cards.map(c => `<option>${esc(c.name)}</option>`).join("")
+  if (keep) {
+    // A value saved before this card list existed still has to be selectable.
+    if (!cards.some(c => c.name === keep)) {
+      sel.insertAdjacentHTML("beforeend", `<option>${esc(keep)}</option>`)
+    }
+    sel.value = keep
+  }
+}
+
+function renderCards() {
+  $("cardList").innerHTML = cards.length
+    ? cards.map(c => `<div class="row" data-card="${esc(c.id)}">
+        <div class="meta"><b>${esc(c.name)}</b></div>
+        <button class="danger" data-del="${esc(c.id)}">Sil</button>
+      </div>`).join("")
+    : `<p class="empty">Kart yok.</p>`
+  $("cardList").querySelectorAll("[data-del]").forEach(b =>
+    b.onclick = () => removeCard(b.dataset.del))
+}
+
+async function addCard() {
+  const name = $("f_newcard").value.trim()
+  $("cardsErr").textContent = ""
+  if (!name) return
+  try {
+    await api(CARDS, { method: "POST", body: JSON.stringify({ name }) })
+    $("f_newcard").value = ""
+    await loadCards()
+  } catch (err) {
+    $("cardsErr").textContent = /unique|validation/i.test(err.message)
+      ? "Bu isimde bir kart zaten var." : err.message
+  }
+}
+
+async function removeCard(id) {
+  const card = cards.find(c => c.id === id)
+  // Removing a card leaves it on the subscriptions that already carry it: the
+  // field is text, and silently blanking a payment method would lose data.
+  const used = items.filter(i => i.payment_method === (card && card.name)).length
+  const warn = used ? `\n\n${used} abonelikte kayıtlı; onlarda yazılı kalır.` : ""
+  if (!confirm(`"${card ? card.name : id}" silinsin mi?${warn}`)) return
+  try {
+    await api(`${CARDS}/${id}`, { method: "DELETE" })
+    await loadCards()
+  } catch (err) {
+    $("cardsErr").textContent = err.message
+  }
+}
+
 function render() {
   let gross = 0, cash = 0, unknown = 0
 
@@ -347,7 +428,8 @@ function openDialog(item) {
       if (f === "cycle") v = "monthly"
       if (f === "currency") v = "TRY"
     }
-    el.value = v
+    if (f === "payment_method") fillCardSelect(v)
+    else el.value = v
   }
 
   const logo = item && item.logo_url
@@ -409,6 +491,7 @@ async function start() {
   $("login").classList.add("hidden")
   $("app").classList.remove("hidden")
   await loadFx()
+  try { await loadCards() } catch (err) { console.error(err) }
   try { await load() } catch (err) { console.error(err) }
   // ?add=1 is how the Glance widget's "+ Ekle" link lands straight on the form.
   if (new URLSearchParams(location.search).get("add")) {
@@ -424,6 +507,10 @@ $("addBtn").onclick = () => openDialog(null)
 $("saveBtn").onclick = save
 $("delBtn").onclick = remove
 $("cancelBtn").onclick = () => $("dlg").close()
+$("cardsBtn").onclick = () => { $("cardsErr").textContent = ""; $("cardsDlg").showModal() }
+$("cardsClose").onclick = () => { $("cardsDlg").close(); fillCardSelect($("f_payment_method").value) }
+$("cardAdd").onclick = addCard
+$("f_newcard").onkeydown = e => { if (e.key === "Enter") addCard() }
 
 // Live preview, so a pasted image URL is confirmed before saving rather than
 // after - a broken link is otherwise only visible once it is already stored.
