@@ -157,6 +157,18 @@
   .err { color: var(--neg); font-size: 13px; min-height: 18px; }
   .note { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
   .empty { padding: 32px 16px; text-align: center; color: var(--muted); }
+  .fxbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px var(--gap); font-size: 13px;
+  }
+  .fxbar .fx {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    background: var(--raise); border-radius: 8px; padding: 5px 10px;
+  }
+  .fxbar .sym { color: var(--muted); font-weight: 600; }
+  .fxbar .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .fxbar .meta { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .fxbar .warn { color: var(--neg); }
   .pager { display: flex; align-items: center; justify-content: center; gap: 10px; }
   .pager button { min-width: 44px; height: 38px; padding: 0 12px; background: var(--raise); color: var(--text); font-weight: 500; }
   .pager button:disabled { opacity: .35; cursor: default; }
@@ -214,7 +226,7 @@
       <div><span>Aylık net</span><b id="tNet">—</b></div>
       <div><span>Yıllık net</span><b id="tYear">—</b></div>
     </div>
-    <p class="note" id="fxNote" style="margin:0 4px"></p>
+    <div class="panel fxbar" id="fxNote"></div>
 
     <div class="panel" id="list"></div>
     <div class="pager hidden" id="pager">
@@ -376,17 +388,24 @@ const rate = n => new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2,
 
 // The rates themselves, not just their provenance: seeing 48,44 is what tells
 // you whether a total looks right.
+const SYMBOL = { USD: "$", EUR: "€", GBP: "£" }
+
 function renderFx(unknown) {
   if (!fx) {
-    $("fxNote").textContent = "Kur alınamadı — yabancı para tutarları toplama dahil edilmedi."
+    $("fxNote").innerHTML =
+      `<span class="warn">Kur alınamadı — yabancı para tutarları toplama dahil edilmedi.</span>`
     return
   }
-  const SYMBOL = { USD: "$", EUR: "€", GBP: "£" }
-  const parts = ["USD", "EUR", "GBP"].filter(c => fx[c]).map(c => `${SYMBOL[c]} ${rate(fx[c])} ₺`)
-  if (fxMeta.date) parts.push(fxMeta.date)
-  if (fxMeta.stale) parts.push("güncellenemedi, son bilinen kur")
-  if (unknown) parts.push(`${unknown} kayıt kur olmadığı için toplama girmedi`)
-  $("fxNote").textContent = parts.join("  |  ")
+  const chips = ["USD", "EUR", "GBP"].filter(c => fx[c]).map(c =>
+    `<span class="fx"><span class="sym">${SYMBOL[c]}</span><span class="val">${rate(fx[c])} ₺</span></span>`)
+
+  const meta = []
+  if (fxMeta.date) meta.push(fxMeta.date)
+  if (unknown) meta.push(`${unknown} kayıt kursuz`)
+  const warn = fxMeta.stale ? `<span class="warn">güncellenemedi</span>` : ""
+
+  $("fxNote").innerHTML = chips.join("") +
+    `<span class="meta">${warn}${warn && meta.length ? " · " : ""}${esc(meta.join(" · "))}</span>`
 }
 
 // Rates are TRY per one unit of the currency.

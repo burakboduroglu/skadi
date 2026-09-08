@@ -172,6 +172,16 @@ function rates(app) {
     rec.set("fetched", now.toISOString().replace("T", " ").substring(0, 19) + "Z")
     app.save(rec)
 
+    // Exactly one row, always. The cache is updated in place rather than
+    // appended to, and this sweeps anything left over - the first version of
+    // this hook cached under base 'EUR' before the move to Yahoo.
+    try {
+      const extras = app.findRecordsByFilter("fx_rates", "id != {:keep}", "", 50, 0, { keep: rec.id })
+      for (const extra of extras) app.delete(extra)
+    } catch (err) {
+      console.log("[subs] fx cleanup skipped: " + err)
+    }
+
     return { rates: fetched, date: rec.getString("fetched"), stale: false }
   } catch (err) {
     console.log("[subs] fx refresh failed: " + err)
