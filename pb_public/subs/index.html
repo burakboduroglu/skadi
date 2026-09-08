@@ -6,8 +6,6 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0d1117">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2358a6ff'/%3E%3Crect x='6' y='9' width='20' height='14' rx='3' fill='%230d1117'/%3E%3Crect x='6' y='13' width='20' height='3' fill='%2358a6ff'/%3E%3Crect x='9' y='18' width='7' height='2.5' rx='1.25' fill='%2358a6ff'/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2358a6ff'/%3E%3Crect x='6' y='9' width='20' height='14' rx='3' fill='%230d1117'/%3E%3Crect x='6' y='13' width='20' height='3' fill='%2358a6ff'/%3E%3Crect x='9' y='18' width='7' height='2.5' rx='1.25' fill='%2358a6ff'/%3E%3C/svg%3E">
 <title>Abonelikler</title>
 <style>
   :root {
@@ -23,6 +21,10 @@
     font: 15px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
     padding-bottom: env(safe-area-inset-bottom);
   }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand svg { width: 30px; height: 30px; flex: none; border-radius: 7px; }
+  #login .brand { justify-content: center; margin-bottom: 4px; }
+  #login .brand svg { width: 40px; height: 40px; border-radius: 9px; }
   .wrap { max-width: 760px; margin: 0 auto; padding: var(--gap) var(--gap) 96px; }
   /* The page is a single column with one gap: section spacing comes from here
      and nowhere else, so nothing can drift by a few pixels on its own. */
@@ -200,7 +202,7 @@
 <div class="wrap">
 
   <div id="login" class="panel hidden" style="max-width:400px;margin:12vh auto;padding:var(--gap)">
-    <h1 data-i18n="app">Abonelikler</h1>
+    <div class="brand"><span class="mark"></span><h1 data-i18n="app">Abonelikler</h1></div>
     <div class="field"><label data-i18n="email">E-posta</label><input id="email" type="email" autocomplete="username"></div>
     <div class="field"><label data-i18n="password">Parola</label><input id="password" type="password" autocomplete="current-password"></div>
     <p class="err" id="loginErr"></p>
@@ -209,7 +211,7 @@
 
   <div id="app" class="hidden">
     <header>
-      <h1 data-i18n="app">Abonelikler</h1>
+      <div class="brand"><span class="mark"></span><h1 data-i18n="app">Abonelikler</h1></div>
       <div class="hdr-right">
         <button id="addBtn" data-i18n="add">+ Ekle</button>
         <button class="avatar" id="avatarBtn" aria-haspopup="menu" aria-expanded="false"></button>
@@ -440,6 +442,21 @@ let fxMeta = { date: null, stale: false }
 const PER_PAGE = 8
 let page = 1
 let cards = []
+
+// The Skadi mark: two overlapping peaks under a snowcap. Defined once and used
+// for both the header and the tab icon, so the two cannot drift apart.
+const MARK = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">` +
+  `<rect width="32" height="32" rx="7" fill="#0d1117"/>` +
+  `<path d="M17.5 26 L22.8 14.2 L28 26 Z" fill="#58a6ff"/>` +
+  `<path d="M4 26 L13 7.5 L22 26 Z" fill="#58a6ff"/>` +
+  `<path d="M13 7.5 L9.7 14.3 L11.5 13 L13.2 14.5 L15 12.9 L16.3 14.3 Z" fill="#e8f2ff"/>` +
+  `</svg>`
+
+document.querySelectorAll(".mark").forEach(el => { el.innerHTML = MARK })
+const favicon = document.createElement("link")
+favicon.rel = "icon"
+favicon.href = "data:image/svg+xml," + encodeURIComponent(MARK)
+document.head.appendChild(favicon)
 
 const $ = id => document.getElementById(id)
 const locale = () => (lang === "tr" ? "tr-TR" : "en-US")
