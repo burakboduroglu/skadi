@@ -523,9 +523,23 @@ async function load() {
 async function start() {
   $("login").classList.add("hidden")
   $("app").classList.remove("hidden")
+  $("list").innerHTML = `<p class="empty">Yükleniyor…</p>`
+
   await loadFx()
   try { await loadCards() } catch (err) { console.error(err) }
-  try { await load() } catch (err) { console.error(err) }
+
+  // A failed load used to leave an empty panel and put the reason in the
+  // console, which reads as "my data is gone". Say what happened instead.
+  try {
+    await load()
+  } catch (err) {
+    console.error(err)
+    $("list").innerHTML =
+      `<p class="empty">Liste yüklenemedi.<br><b>${esc(err.message)}</b>` +
+      `<br><br><button id="retryBtn">Tekrar dene</button></p>`
+    const retry = $("retryBtn")
+    if (retry) retry.onclick = () => start()
+  }
   // ?add=1 is how the Glance widget's "+ Ekle" link lands straight on the form.
   if (new URLSearchParams(location.search).get("add")) {
     history.replaceState(null, "", location.pathname)
