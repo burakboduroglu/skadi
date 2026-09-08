@@ -1,0 +1,12 @@
+Add this INSIDE the existing site block in /etc/caddy/Caddyfile, ABOVE the
+reverse_proxy directive. It makes /api/subs/* unreachable from the internet
+while Glance keeps reading it directly on 127.0.0.1:8090.
+
+	# Private routes: Glance reads these on loopback, nobody else may.
+	respond /api/subs/* 404
+
+Caddy sorts directives by its own order, not by file order, but `respond` is
+matched before `reverse_proxy`, so placement inside the block is cosmetic.
+Verify after reload:
+	curl -s -o /dev/null -w '%{http_code}\n' https://bbp.burakboduroglu.com.tr/api/subs/summary   # 404
+	curl -s http://127.0.0.1:8090/api/subs/summary | head -c 200                                  # JSON

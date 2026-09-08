@@ -1,0 +1,83 @@
+# subs-tracker
+
+Subscription tracking on `penolox-server`, built on the PocketBase instance that
+already serves `bbp.burakboduroglu.com.tr`. No new service, no new port, no
+Docker, no extra backup target — `pb_data` is already covered by
+`restore-kit.timer`.
+
+## Shape
+
+| Piece | Where | What it does |
+|---|---|---|
+| `pb_migrations/1788890841_subscriptions.js` | `/opt/pocketbase/pb_migrations/` | Creates `subscriptions` and `fx_rates`. Both have NULL API rules = superuser only. |
+| `pb_hooks/lib/subs.js` | `/opt/pocketbase/pb_hooks/lib/` | Cycle math, FX cache, Google Play icon resolution. |
+| `pb_hooks/subs.pb.js` | `/opt/pocketbase/pb_hooks/` | `GET /api/subs/summary` + logo-resolving record hooks. |
+| `pb_public/subs/index.html` | `/opt/pocketbase/pb_public/subs/` | The entry form, at `/subs/`. |
+| `glance/subscriptions-widget.yml` | `/etc/glance/glance.yml` | Dashboard widget. |
+| `glance/caddy-block.txt` | `/etc/caddy/Caddyfile` | 404s `/api/subs/*` from the internet. |
+
+## Security model
+
+Two independent gates, either of which is sufficient:
+
+1. **Cloudflare Access** on `/subs*` and `/api/collections/subscriptions*`,
+   same one-time-PIN policy as `/_/`.
+2. **PocketBase superuser-only rules.** The collections have no list/view/create/
+   update/delete rule, which in PocketBase means only a superuser token passes.
+   An anonymous or ordinary-user token gets 403 even if Access were misconfigured.
+
+`GET /api/subs/summary` is the one unauthenticated route, and it is unreachable
+from outside: Caddy answers 404 for `/api/subs/*`, and Glance talks to
+PocketBase directly on `127.0.0.1:8090`, never through Caddy.
+
+Note: the existing edge rate limit on `/api/collections/_superusers*` (5 req /
+10 s) also covers the form's login call. The token is cached in localStorage, so
+this only bites on repeated failed logins.
+
+## Data model
+
+`subscriptions` — name, category, amount, currency (TRY/USD/EUR/GBP), cashback,
+cycle (weekly/monthly/quarterly/yearly), next_charge, payment_method, status,
+vendor_url, logo_url, notes.
+
+**Cashback is a plain per-charge amount in the subscription's own currency.**
+There is deliberately no campaign start/end window and no expiry alerting: the
+number is entered once and edited by hand when the campaign changes. Anything
+more was explicitly cut as unwanted complexity.
+
+`fx_rates` — one row, EUR-based rates from `api.frankfurter.dev` (ECB data, no
+API key). Refreshed lazily on read when older than 12 h. A failed refresh keeps
+the last good rates and sets `fx_stale`, which the widget surfaces; a stale rate
+is never presented as today's.
+
+Amounts that cannot be converted are counted in `unconverted` rather than
+silently treated as zero.
+
+## Logos
+
+Paste a Google Play listing URL into `vendor_url` and leave `logo_url` empty; on
+save a hook reads the listing's `og:image` and stores the icon URL rewritten to
+`=s256`. These `play-lh.googleusercontent.com` URLs are content-addressed, so a
+vendor rebrand publishes a new icon at a new URL and the old one keeps resolving.
+
+The icon is linked, not downloaded, because PocketBase file access follows the
+collection's view rule — a self-hosted logo behind superuser-only rules could not
+be loaded by the widget's `<img>` without opening the collection to the public.
+
+## Deploy
+
+Files are staged to `/tmp/subs` by the agent; every step below is run by Burak.
+See the session transcript for the paste-ready blocks in order:
+
+1. Back up `pb_data`, install migrations/hooks/public, restart `pocketbase`.
+2. Verify the migration applied and `/api/subs/summary` answers on loopback.
+3. Add the `respond /api/subs/* 404` line to the Caddyfile, reload Caddy.
+4. Add the widget to `glance.yml`, restart `glance`.
+5. Add the Cloudflare Access policy paths for `/subs*` and
+   `/api/collections/subscriptions*`.
+
+## Verify
+
+	curl -s http://127.0.0.1:8090/api/subs/summary | head -c 300          # JSON, on the box
+	curl -s -o /dev/null -w '%{http_code}\n' https://bbp.burakboduroglu.com.tr/api/subs/summary   # 404
+	curl -s -o /dev/null -w '%{http_code}\n' https://bbp.burakboduroglu.com.tr/api/collections/subscriptions/records  # 403 or Access redirect

@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Abonelikler</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #262d36; --text: #e6edf3;
+    --muted: #8b949e; --accent: #58a6ff; --pos: #3fb950; --neg: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 20px; margin: 0; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  button {
+    background: var(--accent); color: #06111f; border: 0; border-radius: 6px;
+    padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 400; }
+  button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 400; }
+  input, select, textarea {
+    width: 100%; background: var(--bg); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: inherit;
+  }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field { margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .totals { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 20px; }
+  .totals div span { display: block; font-size: 12px; color: var(--muted); }
+  .totals div b { font-size: 22px; font-weight: 600; }
+  .row {
+    display: flex; align-items: center; gap: 12px; padding: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: 0; }
+  .row img { width: 32px; height: 32px; border-radius: 7px; flex: none; background: var(--line); }
+  .row .meta { flex: 1; min-width: 0; }
+  .row .meta b { display: block; }
+  .row .meta small { color: var(--muted); }
+  .row .amt { text-align: right; white-space: nowrap; }
+  .row .amt small { display: block; color: var(--muted); }
+  .paused { opacity: .5; }
+  dialog {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line);
+    border-radius: 12px; padding: 20px; width: min(560px, 92vw);
+  }
+  dialog::backdrop { background: #000a; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .err { color: var(--neg); font-size: 13px; min-height: 18px; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Login -->
+  <div id="login" class="panel hidden" style="max-width:380px;margin:12vh auto">
+    <h1 style="margin-bottom:16px">Abonelikler</h1>
+    <div class="field"><label>E-posta</label><input id="email" type="email" autocomplete="username"></div>
+    <div class="field"><label>Parola</label><input id="password" type="password" autocomplete="current-password"></div>
+    <p class="err" id="loginErr"></p>
+    <button id="loginBtn" style="width:100%">Giriş</button>
+    <p class="note">PocketBase superuser hesabın ile giriş yapılır.</p>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden">
+    <header>
+      <h1>Abonelikler</h1>
+      <div style="display:flex;gap:8px">
+        <button id="addBtn">+ Ekle</button>
+        <button class="ghost" id="logoutBtn">Çıkış</button>
+      </div>
+    </header>
+
+    <div class="totals panel">
+      <div><span>Aylık brüt</span><b id="tGross">—</b></div>
+      <div><span>Cashback</span><b id="tCash" style="color:var(--pos)">—</b></div>
+      <div><span>Aylık net</span><b id="tNet">—</b></div>
+      <div><span>Yıllık net</span><b id="tYear">—</b></div>
+    </div>
+    <p class="note" id="fxNote" style="margin:-12px 0 20px"></p>
+
+    <div class="panel" id="list"></div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <h1 id="dlgTitle" style="margin-bottom:16px">Abonelik</h1>
+  <div class="field"><label>Ad *</label><input id="f_name"></div>
+  <div class="grid">
+    <div class="field"><label>Tutar *</label><input id="f_amount" type="number" step="0.01" min="0"></div>
+    <div class="field"><label>Para birimi *</label><select id="f_currency">
+      <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+  </div>
+  <div class="grid">
+    <div class="field"><label>Cashback (her ödemede geri gelen)</label><input id="f_cashback" type="number" step="0.01" min="0" placeholder="0"></div>
+    <div class="field"><label>Periyot *</label><select id="f_cycle">
+      <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
+      <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
+  </div>
+  <div class="grid">
+    <div class="field"><label>Sonraki ödeme *</label><input id="f_next_charge" type="date"></div>
+    <div class="field"><label>Durum *</label><select id="f_status">
+      <option value="active">Aktif</option><option value="paused">Duraklatıldı</option>
+      <option value="cancelled">İptal</option></select></div>
+  </div>
+  <div class="grid">
+    <div class="field"><label>Kategori</label><select id="f_category">
+      <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
+      <option>Bulut</option><option>Finans</option><option>Sağlık</option><option>Eğitim</option>
+      <option>Diğer</option></select></div>
+    <div class="field"><label>Ödeme yöntemi</label><input id="f_payment_method" placeholder="Örn. Garanti Bonus"></div>
+  </div>
+  <div class="field"><label>Google Play / site linki</label><input id="f_vendor_url" placeholder="https://play.google.com/store/apps/details?id=..."></div>
+  <div class="field"><label>Logo adresi</label><input id="f_logo_url" placeholder="Boş bırak — Play linkinden otomatik bulunur">
+    <p class="note">Play linki verdiysen burayı boş bırak; kayıtta ikon otomatik çözülür.</p></div>
+  <div class="field"><label>Not</label><textarea id="f_notes" rows="2"></textarea></div>
+  <p class="err" id="dlgErr"></p>
+  <div class="actions">
+    <button class="danger hidden" id="delBtn">Sil</button>
+    <button class="ghost" id="cancelBtn">Vazgeç</button>
+    <button id="saveBtn">Kaydet</button>
+  </div>
+</dialog>
+
+<script>
+const API = location.origin
+const COL = API + "/api/collections/subscriptions/records"
+const FIELDS = ["name","amount","currency","cashback","cycle","next_charge",
+                "status","category","payment_method","vendor_url","logo_url","notes"]
+const CYCLE_MONTHS = { weekly: 12/52, monthly: 1, quarterly: 3, yearly: 12 }
+const CYCLE_TR = { weekly: "haftalık", monthly: "aylık", quarterly: "3 aylık", yearly: "yıllık" }
+
+let token = localStorage.getItem("subs_token") || ""
+let items = []
+let fx = null          // EUR-based rates, or null when unavailable
+let editing = null
+
+const $ = id => document.getElementById(id)
+const fmt = n => new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(n)
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, {
+    ...opts,
+    headers: { "Content-Type": "application/json", "Authorization": token, ...(opts.headers || {}) }
+  })
+  if (res.status === 401 || res.status === 403) { logout(); throw new Error("Oturum düştü") }
+  const body = res.status === 204 ? null : await res.json()
+  if (!res.ok) throw new Error(body?.message || ("HTTP " + res.status))
+  return body
+}
+
+function logout() {
+  token = ""
+  localStorage.removeItem("subs_token")
+  $("app").classList.add("hidden")
+  $("login").classList.remove("hidden")
+}
+
+async function login() {
+  $("loginErr").textContent = ""
+  try {
+    const res = await fetch(API + "/api/collections/_superusers/auth-with-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identity: $("email").value.trim(), password: $("password").value })
+    })
+    const body = await res.json()
+    if (!res.ok) throw new Error(body?.message || "Giriş başarısız")
+    token = body.token
+    localStorage.setItem("subs_token", token)
+    $("password").value = ""
+    start()
+  } catch (err) {
+    // The edge rate-limits /api/collections/_superusers* at 5 requests per 10s,
+    // so a burst of retries looks like a credential failure. Say so.
+    $("loginErr").textContent = err.message + " (art arda denediysen 10 sn bekle)"
+  }
+}
+
+// Rates come straight from the browser: the summary route that Glance uses is
+// deliberately unreachable from outside, and this is a public CORS-enabled API.
+async function loadFx() {
+  try {
+    const res = await fetch("https://api.frankfurter.dev/v1/latest?base=EUR&symbols=TRY,USD,GBP")
+    const body = await res.json()
+    fx = { ...body.rates, EUR: 1 }
+    $("fxNote").textContent = "Kur: " + body.date + " (ECB)"
+  } catch (err) {
+    fx = null
+    $("fxNote").textContent = "Kur alınamadı — yabancı para tutarları toplama dahil edilmedi."
+  }
+}
+
+const toTRY = (amount, cur) =>
+  cur === "TRY" ? amount : (fx && fx[cur] && fx.TRY ? amount * (fx.TRY / fx[cur]) : null)
+
+function render() {
+  let gross = 0, cash = 0, unknown = 0
+
+  const html = items.map(s => {
+    const per = CYCLE_MONTHS[s.cycle] || 1
+    const amtTRY = toTRY(s.amount, s.currency)
+    if (s.status === "active") {
+      if (amtTRY === null) unknown++
+      else { gross += amtTRY / per; cash += (toTRY(s.cashback || 0, s.currency) || 0) / per }
+    }
+    const logo = s.logo_url
+      ? `<img src="${s.logo_url}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+      : `<img alt="">`
+    const sub = [CYCLE_TR[s.cycle], s.next_charge ? s.next_charge.substring(0,10) : null,
+                 s.payment_method, s.category].filter(Boolean).join(" · ")
+    const cb = s.cashback ? `<small style="color:var(--pos)">−${fmt(s.cashback)} cashback</small>` : ""
+    return `<div class="row ${s.status !== "active" ? "paused" : ""}" data-id="${s.id}">
+      ${logo}
+      <div class="meta"><b>${s.name}</b><small>${sub}</small></div>
+      <div class="amt"><b>${fmt(s.amount)} ${s.currency}</b>${cb}</div>
+    </div>`
+  }).join("")
+
+  $("list").innerHTML = html || `<p class="note" style="margin:8px">Henüz kayıt yok.</p>`
+  $("list").querySelectorAll(".row").forEach(el =>
+    el.onclick = () => openDialog(items.find(i => i.id === el.dataset.id)))
+
+  $("tGross").textContent = fmt(gross) + " ₺"
+  $("tCash").textContent = cash ? "−" + fmt(cash) + " ₺" : "—"
+  $("tNet").textContent = fmt(gross - cash) + " ₺"
+  $("tYear").textContent = fmt((gross - cash) * 12) + " ₺"
+  if (unknown) $("fxNote").textContent += ` · ${unknown} kayıt kur olmadığı için toplama girmedi`
+}
+
+function openDialog(item) {
+  editing = item || null
+  $("dlgTitle").textContent = item ? "Düzenle" : "Yeni abonelik"
+  $("delBtn").classList.toggle("hidden", !item)
+  $("dlgErr").textContent = ""
+  for (const f of FIELDS) {
+    const el = $("f_" + f)
+    let v = item ? (item[f] ?? "") : ""
+    if (f === "next_charge" && v) v = String(v).substring(0, 10)
+    if (f === "status" && !item) v = "active"
+    if (f === "cycle" && !item) v = "monthly"
+    if (f === "currency" && !item) v = "TRY"
+    el.value = v
+  }
+  $("dlg").showModal()
+}
+
+async function save() {
+  $("dlgErr").textContent = ""
+  const data = {}
+  for (const f of FIELDS) data[f] = $("f_" + f).value
+  data.amount = parseFloat(data.amount || 0)
+  data.cashback = parseFloat(data.cashback || 0)
+  if (!data.name || !data.next_charge) {
+    $("dlgErr").textContent = "Ad ve sonraki ödeme tarihi zorunlu."
+    return
+  }
+  $("saveBtn").disabled = true
+  try {
+    // A Play link is resolved to an icon server-side, so this can take a moment.
+    await api(editing ? `${COL}/${editing.id}` : COL, {
+      method: editing ? "PATCH" : "POST",
+      body: JSON.stringify(data)
+    })
+    $("dlg").close()
+    await load()
+  } catch (err) {
+    $("dlgErr").textContent = err.message
+  } finally {
+    $("saveBtn").disabled = false
+  }
+}
+
+async function remove() {
+  if (!editing || !confirm(`"${editing.name}" silinsin mi?`)) return
+  try {
+    await api(`${COL}/${editing.id}`, { method: "DELETE" })
+    $("dlg").close()
+    await load()
+  } catch (err) {
+    $("dlgErr").textContent = err.message
+  }
+}
+
+async function load() {
+  const body = await api(COL + "?perPage=500&sort=status,next_charge")
+  items = body.items
+  render()
+}
+
+async function start() {
+  $("login").classList.add("hidden")
+  $("app").classList.remove("hidden")
+  await loadFx()
+  try { await load() } catch (err) { console.error(err) }
+}
+
+$("loginBtn").onclick = login
+$("password").onkeydown = e => { if (e.key === "Enter") login() }
+$("logoutBtn").onclick = logout
+$("addBtn").onclick = () => openDialog(null)
+$("saveBtn").onclick = save
+$("delBtn").onclick = remove
+$("cancelBtn").onclick = () => $("dlg").close()
+
+if (token) start(); else $("login").classList.remove("hidden")
+</script>
+</body>
+</html>
