@@ -33,15 +33,28 @@
   }
   button:active { transform: scale(.98); }
   button.ghost { background: var(--raise); color: var(--text); font-weight: 500; }
-  /* Header actions are siblings sitting side by side, so they get one size.
-     A grid rather than flex, so the four stay exactly equal in both layouts:
-     one row on a wide screen, two by two on a phone. */
-  .hdr-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
-  .hdr-actions button { padding: 0 10px; white-space: nowrap; }
-  @media (max-width: 560px) {
-    header { flex-wrap: wrap; }
-    .hdr-actions { width: 100%; grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
+  .hdr-right { display: flex; align-items: center; gap: 8px; position: relative; }
+  /* Add is the only action left in the header, and it is muted rather than
+     accent-blue so the avatar is what the eye lands on. */
+  #addBtn { background: var(--raise); color: var(--text); font-weight: 550; padding: 0 16px; }
+  .avatar {
+    width: 44px; min-width: 44px; height: 44px; padding: 0; border-radius: 50%;
+    background: var(--raise); color: var(--text); border: 1px solid var(--line);
+    font-weight: 600; font-size: 15px;
   }
+  .avatar[aria-expanded="true"] { border-color: var(--accent); }
+  .menu {
+    position: absolute; top: 52px; right: 0; z-index: 20; min-width: 172px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 6px; box-shadow: 0 14px 34px #000a;
+  }
+  .menu button {
+    display: block; width: 100%; height: 40px; min-height: 40px; text-align: left;
+    background: transparent; color: var(--text); font-weight: 500; border-radius: 8px;
+    padding: 0 12px;
+  }
+  .menu button:hover { background: var(--raise); }
+  .menu button.out { color: var(--neg); }
   button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 500; }
 
   input, select, textarea {
@@ -161,11 +174,14 @@
   <div id="app" class="hidden">
     <header>
       <h1>Abonelikler</h1>
-      <div class="hdr-actions">
+      <div class="hdr-right">
         <button id="addBtn">+ Ekle</button>
-        <button class="ghost" id="cardsBtn">Kartlar</button>
-        <button class="ghost" id="dashBtn">Dashboard</button>
-        <button class="ghost" id="logoutBtn">Çıkış</button>
+        <button class="avatar" id="avatarBtn" aria-haspopup="menu" aria-expanded="false"></button>
+        <div class="menu hidden" id="menu" role="menu">
+          <button id="cardsBtn">Kartlar</button>
+          <button id="dashBtn">Dashboard</button>
+          <button id="logoutBtn" class="out">Çıkış</button>
+        </div>
       </div>
     </header>
 
@@ -302,6 +318,8 @@ async function login() {
     if (!res.ok) throw new Error(body?.message || "Giriş başarısız")
     token = body.token
     localStorage.setItem("subs_token", token)
+    // Kept only to draw the avatar's initial; the token is what authenticates.
+    localStorage.setItem("subs_email", $("email").value.trim())
     $("password").value = ""
     start()
   } catch (err) {
@@ -557,6 +575,23 @@ $("cancelBtn").onclick = () => $("dlg").close()
 $("cardsBtn").onclick = () => { $("cardsErr").textContent = ""; $("cardsDlg").showModal() }
 $("cardsClose").onclick = () => { $("cardsDlg").close(); fillCardSelect($("f_payment_method").value) }
 $("cardAdd").onclick = addCard
+
+const menu = $("menu")
+const closeMenu = () => {
+  menu.classList.add("hidden")
+  $("avatarBtn").setAttribute("aria-expanded", "false")
+}
+$("avatarBtn").onclick = (e) => {
+  e.stopPropagation()
+  const open = menu.classList.toggle("hidden")
+  $("avatarBtn").setAttribute("aria-expanded", open ? "false" : "true")
+}
+document.addEventListener("click", closeMenu)
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenu() })
+menu.querySelectorAll("button").forEach(b => b.addEventListener("click", closeMenu))
+
+$("avatarBtn").textContent =
+  (localStorage.getItem("subs_email") || "?").trim().charAt(0).toUpperCase()
 $("dashBtn").onclick = () => location.href = "https://glance.burakboduroglu.com.tr/"
 $("prevBtn").onclick = () => turnPage(-1)
 $("nextBtn").onclick = () => turnPage(1)
