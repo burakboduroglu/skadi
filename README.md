@@ -25,10 +25,12 @@ Skadi tracks what you pay every month for the services you subscribe to, and wha
 That framing is the whole point. A dedicated subscription tracker means another container, another database, another volume in your backup, another process competing for RAM on a small box. If PocketBase is already running, all of that is redundant — the database, the auth, the HTTP server, the backup story and the admin UI are sitting there, and Skadi is roughly six hundred lines that use them.
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-list.png" alt="The list: totals, live rates, and every subscription with its own logo" width="760">
-  <br><br>
-  <img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-dialog.png" alt="Adding a subscription: paste a link, the name and logo resolve server-side" width="380">
-  <img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-menu.png" alt="Language and display currency, both stored per browser" width="380">
+
+<img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-list.png" alt="The list: totals, live rates, and every subscription with its own logo" width="620">
+
+<img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-dialog.png" alt="Adding a subscription: paste a link, the name and logo resolve server-side" width="305">
+<img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/screenshot-menu.png" alt="Language and display currency, both stored per browser" width="305">
+
 </div>
 
 ## What it is
