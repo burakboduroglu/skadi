@@ -63,6 +63,15 @@
   .menu svg { width: 17px; height: 17px; flex: none; opacity: .8; }
   .menu button:hover { background: var(--raise); }
   .menu button.out { color: var(--neg); }
+  .menu-sep { height: 1px; background: var(--line); margin: 6px 4px; }
+  .menu-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 4px 12px 4px 12px; font-size: 13px; color: var(--muted);
+  }
+  .menu-row select {
+    width: auto; height: 30px; line-height: 28px; font-size: 13px;
+    padding: 0 26px 0 8px; background-position: calc(100% - 14px) 13px, calc(100% - 9px) 13px;
+  }
   button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 500; }
 
   input, select, textarea {
@@ -189,18 +198,18 @@
 <div class="wrap">
 
   <div id="login" class="panel hidden" style="max-width:400px;margin:12vh auto;padding:var(--gap)">
-    <h1>Abonelikler</h1>
-    <div class="field"><label>E-posta</label><input id="email" type="email" autocomplete="username"></div>
-    <div class="field"><label>Parola</label><input id="password" type="password" autocomplete="current-password"></div>
+    <h1 data-i18n="app">Abonelikler</h1>
+    <div class="field"><label data-i18n="email">E-posta</label><input id="email" type="email" autocomplete="username"></div>
+    <div class="field"><label data-i18n="password">Parola</label><input id="password" type="password" autocomplete="current-password"></div>
     <p class="err" id="loginErr"></p>
-    <button id="loginBtn" style="width:100%">Giriş</button>
+    <button id="loginBtn" style="width:100%" data-i18n="login">Giriş</button>
   </div>
 
   <div id="app" class="hidden">
     <header>
-      <h1>Abonelikler</h1>
+      <h1 data-i18n="app">Abonelikler</h1>
       <div class="hdr-right">
-        <button id="addBtn">+ Ekle</button>
+        <button id="addBtn" data-i18n="add">+ Ekle</button>
         <button class="avatar" id="avatarBtn" aria-haspopup="menu" aria-expanded="false"></button>
         <div class="menu hidden" id="menu" role="menu">
           <button id="cardsBtn">
@@ -208,7 +217,7 @@
                  stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="5" width="20" height="14" rx="2.5"></rect>
               <path d="M2 10h20"></path><path d="M6 15h4"></path>
-            </svg>Kartlar</button>
+            </svg><span data-i18n="cards">Kartlar</span></button>
           <button id="dashBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round">
@@ -216,22 +225,30 @@
               <rect x="13.5" y="3" width="7.5" height="5" rx="1.5"></rect>
               <rect x="3" y="15" width="7.5" height="6" rx="1.5"></rect>
               <rect x="13.5" y="11" width="7.5" height="10" rx="1.5"></rect>
-            </svg>Glance</button>
+            </svg><span data-i18n="glance">Glance</span></button>
           <button id="logoutBtn" class="out">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round">
               <path d="M15 17l5-5-5-5"></path><path d="M20 12H9"></path>
               <path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"></path>
-            </svg>Çıkış</button>
+            </svg><span data-i18n="logout">Çıkış</span></button>
+
+          <div class="menu-sep"></div>
+          <label class="menu-row"><span data-i18n="lang">Dil</span>
+            <select id="langSel"><option value="tr">Türkçe</option><option value="en">English</option></select></label>
+          <label class="menu-row"><span data-i18n="display">Görünüm</span>
+            <select id="baseSel">
+              <option value="TRY">₺ TRY</option><option value="USD">$ USD</option>
+              <option value="EUR">€ EUR</option><option value="GBP">£ GBP</option></select></label>
         </div>
       </div>
     </header>
 
     <div class="panel totals">
-      <div><span>Aylık brüt</span><b id="tGross">—</b></div>
-      <div><span>Cashback</span><b id="tCash" style="color:var(--pos)">—</b></div>
-      <div><span>Aylık net</span><b id="tNet">—</b></div>
-      <div><span>Yıllık net</span><b id="tYear">—</b></div>
+      <div><span data-i18n="gross">Aylık brüt</span><b id="tGross">—</b></div>
+      <div><span data-i18n="cashback">Cashback</span><b id="tCash" style="color:var(--pos)">—</b></div>
+      <div><span data-i18n="net">Aylık net</span><b id="tNet">—</b></div>
+      <div><span data-i18n="yearly">Yıllık net</span><b id="tYear">—</b></div>
     </div>
     <div class="panel fxbar" id="fxNote"></div>
 
@@ -247,37 +264,46 @@
     <h1 id="dlgTitle" style="margin-bottom:var(--gap)">Yeni abonelik</h1>
 
     <div class="grid">
-      <div class="field"><label>Link</label>
+      <div class="field"><label data-i18n="f_link">Link</label>
         <input id="f_vendor_url" inputmode="url"></div>
-      <div class="field"><label>Ad</label>
+      <div class="field"><label data-i18n="f_name">Ad</label>
         <input id="f_name"></div>
 
-      <div class="field"><label>Tutar</label>
+      <div class="field"><label data-i18n="f_amount">Tutar</label>
         <input id="f_amount" type="number" inputmode="decimal" step="0.01" min="0"></div>
-      <div class="field"><label>Birim</label><select id="f_currency">
+      <div class="field"><label data-i18n="f_unit">Birim</label><select id="f_currency">
         <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
 
-      <div class="field"><label>Periyot</label><select id="f_cycle">
-        <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
-        <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
-      <div class="field"><label>Tarih</label>
+      <div class="field"><label data-i18n="f_cycle">Periyot</label><select id="f_cycle">
+        <option value="monthly" data-i18n="c_monthly">Aylık</option>
+        <option value="yearly" data-i18n="c_yearly">Yıllık</option>
+        <option value="quarterly" data-i18n="c_quarterly">3 aylık</option>
+        <option value="weekly" data-i18n="c_weekly">Haftalık</option></select></div>
+      <div class="field"><label data-i18n="f_date">Tarih</label>
         <input id="f_next_charge" type="date"></div>
 
-      <div class="field"><label>Cashback</label>
+      <div class="field"><label data-i18n="f_cashbackF">Cashback</label>
         <input id="f_cashback" type="number" inputmode="decimal" step="0.01" min="0"></div>
-      <div class="field"><label>Kart</label>
+      <div class="field"><label data-i18n="f_card">Kart</label>
         <select id="f_payment_method"></select></div>
 
-      <div class="field"><label>Kategori</label><select id="f_category">
-        <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
-        <option>Bulut</option><option>Finans</option><option>Sağlık</option><option>Eğitim</option>
-        <option>Diğer</option></select></div>
-      <div class="field"><label>Durum</label><select id="f_status">
-        <option value="active">Aktif</option><option value="paused">Duraklatıldı</option>
-        <option value="cancelled">İptal</option></select></div>
+      <div class="field"><label data-i18n="f_category">Kategori</label><select id="f_category">
+        <option value="">—</option>
+        <option value="Yazılım" data-i18n="k_software">Yazılım</option>
+        <option value="Medya" data-i18n="k_media">Medya</option>
+        <option value="Oyun" data-i18n="k_games">Oyun</option>
+        <option value="Bulut" data-i18n="k_cloud">Bulut</option>
+        <option value="Finans" data-i18n="k_finance">Finans</option>
+        <option value="Sağlık" data-i18n="k_health">Sağlık</option>
+        <option value="Eğitim" data-i18n="k_learning">Eğitim</option>
+        <option value="Diğer" data-i18n="k_other">Diğer</option></select></div>
+      <div class="field"><label data-i18n="f_status">Durum</label><select id="f_status">
+        <option value="active" data-i18n="s_active">Aktif</option>
+        <option value="paused" data-i18n="s_paused">Duraklatıldı</option>
+        <option value="cancelled" data-i18n="s_cancelled">İptal</option></select></div>
     </div>
 
-    <div class="field"><label>Not</label><textarea id="f_notes" rows="2"></textarea></div>
+    <div class="field"><label data-i18n="f_notes">Not</label><textarea id="f_notes" rows="2"></textarea></div>
 
     <div class="logo-preview hidden" id="logoPreview">
       <img id="logoImg" alt="">
@@ -286,22 +312,22 @@
   </div>
 
   <div class="dlg-foot">
-    <button class="danger hidden" id="delBtn">Sil</button>
-    <button class="ghost" id="cancelBtn">Vazgeç</button>
-    <button id="saveBtn">Kaydet</button>
+    <button class="danger hidden" id="delBtn" data-i18n="del">Sil</button>
+    <button class="ghost" id="cancelBtn" data-i18n="cancel">Vazgeç</button>
+    <button id="saveBtn" data-i18n="save">Kaydet</button>
   </div>
 </dialog>
 
 <dialog id="cardsDlg">
   <div class="dlg-body">
-    <h1 style="margin-bottom:var(--gap)">Kartlar</h1>
+    <h1 style="margin-bottom:var(--gap)" data-i18n="cards">Kartlar</h1>
     <div class="panel" id="cardList"></div>
-    <div class="field" style="margin-top:var(--gap)"><label>Yeni</label><input id="f_newcard"></div>
+    <div class="field" style="margin-top:var(--gap)"><label data-i18n="new">Yeni</label><input id="f_newcard"></div>
     <p class="err" id="cardsErr"></p>
   </div>
   <div class="dlg-foot">
-    <button class="ghost" id="cardsClose">Kapat</button>
-    <button id="cardAdd">Ekle</button>
+    <button class="ghost" id="cardsClose" data-i18n="close">Kapat</button>
+    <button id="cardAdd" data-i18n="addShort">Ekle</button>
   </div>
 </dialog>
 
@@ -313,7 +339,85 @@ const CARDS = API + "/api/collections/cards/records"
 const FIELDS = ["name","amount","currency","cashback","cycle","next_charge",
                 "status","category","payment_method","vendor_url","notes"]
 const CYCLE_MONTHS = { weekly: 12/52, monthly: 1, quarterly: 3, yearly: 12 }
-const CYCLE_TR = { weekly: "haftalık", monthly: "aylık", quarterly: "3 aylık", yearly: "yıllık" }
+const cycleName = c => t("c_" + c) || c
+
+
+// Two dictionaries and one lookup - no i18n runtime for a page this size.
+// Category *values* stay Turkish because they are stored data; only their
+// visible text is translated, which is why the option elements carry a value.
+const I18N = {
+  tr: {
+    app: "Abonelikler", email: "E-posta", password: "Parola", login: "Giriş",
+    add: "+ Ekle", addShort: "Ekle", cards: "Kartlar", glance: "Glance", logout: "Çıkış",
+    lang: "Dil", display: "Görünüm",
+    gross: "Aylık brüt", cashback: "Cashback", net: "Aylık net", yearly: "Yıllık net",
+    f_link: "Link", f_name: "Ad", f_amount: "Tutar", f_unit: "Birim", f_cycle: "Periyot",
+    f_date: "Tarih", f_cashbackF: "Cashback", f_card: "Kart", f_category: "Kategori",
+    f_status: "Durum", f_notes: "Not",
+    c_monthly: "Aylık", c_yearly: "Yıllık", c_quarterly: "3 aylık", c_weekly: "Haftalık",
+    s_active: "Aktif", s_paused: "Duraklatıldı", s_cancelled: "İptal",
+    k_software: "Yazılım", k_media: "Medya", k_games: "Oyun", k_cloud: "Bulut",
+    k_finance: "Finans", k_health: "Sağlık", k_learning: "Eğitim", k_other: "Diğer",
+    save: "Kaydet", cancel: "Vazgeç", del: "Sil", close: "Kapat", new: "Yeni",
+    titleNew: "Yeni abonelik", titleEdit: "Düzenle",
+    saving: "Kaydediliyor…", fetching: "Çekiliyor…", loading: "Yükleniyor…",
+    emptyList: "Henüz kayıt yok.", emptyHint: "ile başla.",
+    loadFailed: "Liste yüklenemedi.", retry: "Tekrar dene",
+    noCards: "Kart yok.", cardExists: "Bu isimde bir kart zaten var.",
+    cardUsed: "abonelikte kayıtlı; onlarda yazılı kalır.",
+    confirmDelete: "silinsin mi?",
+    errName: "Ad gerekli (ya da bir Play linki ver).",
+    errDate: "Tarih gerekli.", errAmount: "Tutar gerekli.",
+    errSession: "Oturum düştü", errLogin: "Giriş başarısız",
+    errThrottle: "(art arda denediysen 10 sn bekle)",
+    fxFailed: "Kur alınamadı — yabancı para tutarları toplama dahil edilmedi.",
+    fxStale: "güncellenemedi", fxUnconverted: "kayıt kursuz"
+  },
+  en: {
+    app: "Subscriptions", email: "Email", password: "Password", login: "Sign in",
+    add: "+ Add", addShort: "Add", cards: "Cards", glance: "Glance", logout: "Sign out",
+    lang: "Language", display: "Display",
+    gross: "Monthly gross", cashback: "Cashback", net: "Monthly net", yearly: "Yearly net",
+    f_link: "Link", f_name: "Name", f_amount: "Amount", f_unit: "Currency", f_cycle: "Cycle",
+    f_date: "Date", f_cashbackF: "Cashback", f_card: "Card", f_category: "Category",
+    f_status: "Status", f_notes: "Notes",
+    c_monthly: "Monthly", c_yearly: "Yearly", c_quarterly: "Quarterly", c_weekly: "Weekly",
+    s_active: "Active", s_paused: "Paused", s_cancelled: "Cancelled",
+    k_software: "Software", k_media: "Media", k_games: "Games", k_cloud: "Cloud",
+    k_finance: "Finance", k_health: "Health", k_learning: "Learning", k_other: "Other",
+    save: "Save", cancel: "Cancel", del: "Delete", close: "Close", new: "New",
+    titleNew: "New subscription", titleEdit: "Edit",
+    saving: "Saving…", fetching: "Fetching…", loading: "Loading…",
+    emptyList: "Nothing here yet.", emptyHint: "to start.",
+    loadFailed: "Could not load the list.", retry: "Try again",
+    noCards: "No cards.", cardExists: "A card with that name already exists.",
+    cardUsed: "subscriptions carry it; it stays written on them.",
+    confirmDelete: "— delete it?",
+    errName: "A name is required (or give a Play link).",
+    errDate: "A date is required.", errAmount: "An amount is required.",
+    errSession: "Session expired", errLogin: "Sign-in failed",
+    errThrottle: "(wait 10s if you retried quickly)",
+    fxFailed: "No rates — foreign amounts were left out of the totals.",
+    fxStale: "not refreshed", fxUnconverted: "record(s) without a rate"
+  }
+}
+
+let lang = localStorage.getItem("subs_lang") ||
+  ((navigator.language || "en").toLowerCase().startsWith("tr") ? "tr" : "en")
+// The display base only changes what the totals are quoted in; each row keeps
+// the currency it is actually charged in, which is the fact, not a conversion.
+let base = localStorage.getItem("subs_base") || "TRY"
+
+const t = k => (I18N[lang] && I18N[lang][k]) || I18N.tr[k] || k
+const SYMBOL = { TRY: "₺", USD: "$", EUR: "€", GBP: "£" }
+
+function applyLang() {
+  document.documentElement.lang = lang
+  document.title = t("app")
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    el.textContent = t(el.getAttribute("data-i18n"))
+  })
+}
 
 let token = localStorage.getItem("subs_token") || ""
 let items = []
@@ -325,7 +429,21 @@ let page = 1
 let cards = []
 
 const $ = id => document.getElementById(id)
-const fmt = n => new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(n)
+const locale = () => (lang === "tr" ? "tr-TR" : "en-US")
+const fmt = (n, digits = 0) =>
+  new Intl.NumberFormat(locale(), { maximumFractionDigits: digits }).format(n)
+
+// A TRY figure rendered in whichever currency is on display. Rates are TRY per
+// one unit, so dividing converts; TRY divides by one and is unchanged.
+function inBase(tryValue) {
+  if (base === "TRY") return tryValue
+  if (!fx || !fx[base]) return null
+  return tryValue / fx[base]
+}
+const money = tryValue => {
+  const v = inBase(tryValue)
+  return v === null ? "—" : `${fmt(v, base === "TRY" ? 0 : 2)} ${SYMBOL[base]}`
+}
 
 // Every field below reaches innerHTML, and `name` can arrive from a Google Play
 // listing's og:title rather than from this browser. Unescaped, a crafted title
@@ -339,7 +457,7 @@ async function api(url, opts = {}) {
     ...opts,
     headers: { "Content-Type": "application/json", "Authorization": token, ...(opts.headers || {}) }
   })
-  if (res.status === 401 || res.status === 403) { logout(); throw new Error("Oturum düştü") }
+  if (res.status === 401 || res.status === 403) { logout(); throw new Error(t("errSession")) }
   const body = res.status === 204 ? null : await res.json()
   if (!res.ok) throw new Error(body?.message || ("HTTP " + res.status))
   return body
@@ -361,7 +479,7 @@ async function login() {
       body: JSON.stringify({ identity: $("email").value.trim(), password: $("password").value })
     })
     const body = await res.json()
-    if (!res.ok) throw new Error(body?.message || "Giriş başarısız")
+    if (!res.ok) throw new Error(body?.message || t("errLogin"))
     token = body.token
     localStorage.setItem("subs_token", token)
     // Kept only to draw the avatar's initial; the token is what authenticates.
@@ -371,7 +489,7 @@ async function login() {
   } catch (err) {
     // The edge rate-limits /api/collections/_superusers* at 5 requests per 10s,
     // so a burst of retries looks like a credential failure. Say so.
-    $("loginErr").textContent = err.message + " (art arda denediysen 10 sn bekle)"
+    $("loginErr").textContent = err.message + " " + t("errThrottle")
   }
 }
 
@@ -390,27 +508,27 @@ async function loadFx() {
   }
 }
 
-const rate = n => new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2,
-                                                  maximumFractionDigits: 2 }).format(n)
+const rate = n => new Intl.NumberFormat(locale(), { minimumFractionDigits: 2,
+                                                   maximumFractionDigits: 2 }).format(n)
 
 // The rates themselves, not just their provenance: seeing 48,44 is what tells
 // you whether a total looks right.
-const SYMBOL = { USD: "$", EUR: "€", GBP: "£" }
-
 function renderFx(unknown) {
   if (!fx) {
-    $("fxNote").innerHTML =
-      `<span class="warn">Kur alınamadı — yabancı para tutarları toplama dahil edilmedi.</span>`
+    $("fxNote").innerHTML = `<span class="warn">${esc(t("fxFailed"))}</span>`
     return
   }
-  const chips = ["USD", "EUR", "GBP"].filter(c => fx[c]).map(c =>
-    `<span class="fx"><span class="sym">${SYMBOL[c]}</span><span class="dot">•</span>` +
-    `<span class="val">${rate(fx[c])} ₺</span></span>`)
+  // Quoted against the display base, so switching to USD does not leave a row
+  // of lira prices underneath dollar totals.
+  const chips = ["TRY", "USD", "EUR", "GBP"]
+    .filter(c => c !== base && fx[c] && fx[base])
+    .map(c => `<span class="fx"><span class="sym">${SYMBOL[c]}</span><span class="dot">•</span>` +
+              `<span class="val">${rate(fx[c] / fx[base])} ${SYMBOL[base]}</span></span>`)
 
   const meta = []
   if (fxMeta.date) meta.push(fxMeta.date)
-  if (unknown) meta.push(`${unknown} kayıt kursuz`)
-  const warn = fxMeta.stale ? `<span class="warn">güncellenemedi</span>` : ""
+  if (unknown) meta.push(`${unknown} ${t("fxUnconverted")}`)
+  const warn = fxMeta.stale ? `<span class="warn">${esc(t("fxStale"))}</span>` : ""
 
   $("fxNote").innerHTML = chips.join("") +
     `<span class="meta">${warn}${warn && meta.length ? " · " : ""}${esc(meta.join(" · "))}</span>`
@@ -446,9 +564,9 @@ function renderCards() {
   $("cardList").innerHTML = cards.length
     ? cards.map(c => `<div class="row" data-card="${esc(c.id)}">
         <div class="meta"><b>${esc(c.name)}</b></div>
-        <button class="danger" data-del="${esc(c.id)}">Sil</button>
+        <button class="danger" data-del="${esc(c.id)}">${esc(t("del"))}</button>
       </div>`).join("")
-    : `<p class="empty">Kart yok.</p>`
+    : `<p class="empty">${esc(t("noCards"))}</p>`
   $("cardList").querySelectorAll("[data-del]").forEach(b =>
     b.onclick = () => removeCard(b.dataset.del))
 }
@@ -463,7 +581,7 @@ async function addCard() {
     await loadCards()
   } catch (err) {
     $("cardsErr").textContent = /unique|validation/i.test(err.message)
-      ? "Bu isimde bir kart zaten var." : err.message
+      ? t("cardExists") : err.message
   }
 }
 
@@ -472,8 +590,8 @@ async function removeCard(id) {
   // Removing a card leaves it on the subscriptions that already carry it: the
   // field is text, and silently blanking a payment method would lose data.
   const used = items.filter(i => i.payment_method === (card && card.name)).length
-  const warn = used ? `\n\n${used} abonelikte kayıtlı; onlarda yazılı kalır.` : ""
-  if (!confirm(`"${card ? card.name : id}" silinsin mi?${warn}`)) return
+  const warn = used ? `\n\n${used} ${t("cardUsed")}` : ""
+  if (!confirm(`"${card ? card.name : id}" ${t("confirmDelete")}${warn}`)) return
   try {
     await api(`${CARDS}/${id}`, { method: "DELETE" })
     await loadCards()
@@ -504,7 +622,7 @@ function render() {
     const logo = s.logo_url
       ? `<img src="${esc(s.logo_url)}" alt="" loading="lazy" onerror="this.removeAttribute('src')">`
       : `<img alt="">`
-    const sub = [CYCLE_TR[s.cycle], s.next_charge ? s.next_charge.substring(0,10) : null,
+    const sub = [cycleName(s.cycle), s.next_charge ? s.next_charge.substring(0,10) : null,
                  s.payment_method, s.category].filter(Boolean).map(esc).join(" · ")
     const cb = s.cashback ? `<small>−${fmt(s.cashback)} cashback</small>` : ""
     return `<div class="row ${s.status !== "active" ? "off" : ""}" data-id="${esc(s.id)}">
@@ -514,14 +632,15 @@ function render() {
     </div>`
   }).join("")
 
-  $("list").innerHTML = html || `<p class="empty">Henüz kayıt yok.<br>Üstteki <b>+ Ekle</b> ile başla.</p>`
+  $("list").innerHTML = html ||
+    `<p class="empty">${esc(t("emptyList"))}<br><b>${esc(t("add"))}</b> ${esc(t("emptyHint"))}</p>`
   $("list").querySelectorAll(".row").forEach(el =>
     el.onclick = () => openDialog(items.find(i => i.id === el.dataset.id)))
 
-  $("tGross").textContent = fmt(gross) + " ₺"
-  $("tCash").textContent = cash ? "−" + fmt(cash) + " ₺" : "—"
-  $("tNet").textContent = fmt(gross - cash) + " ₺"
-  $("tYear").textContent = fmt((gross - cash) * 12) + " ₺"
+  $("tGross").textContent = money(gross)
+  $("tCash").textContent = cash ? "−" + money(cash) : "—"
+  $("tNet").textContent = money(gross - cash)
+  $("tYear").textContent = money((gross - cash) * 12)
   renderFx(unknown)
 
   $("pager").classList.toggle("hidden", pages < 2)
@@ -538,7 +657,7 @@ function turnPage(delta) {
 
 function openDialog(item) {
   editing = item || null
-  $("dlgTitle").textContent = item ? "Düzenle" : "Yeni abonelik"
+  $("dlgTitle").textContent = t(item ? "titleEdit" : "titleNew")
   $("delBtn").classList.toggle("hidden", !item)
   $("dlgErr").textContent = ""
   for (const f of FIELDS) {
@@ -571,12 +690,12 @@ async function save() {
 
   // Name may be blank when a Play link can supply it; the server fills it in.
   const playLink = data.vendor_url.indexOf("play.google.com") !== -1
-  if (!data.name && !playLink) { $("dlgErr").textContent = "Ad gerekli (ya da bir Play linki ver)."; return }
-  if (!data.next_charge) { $("dlgErr").textContent = "Sonraki ödeme tarihi gerekli."; return }
-  if (!data.amount) { $("dlgErr").textContent = "Tutar gerekli."; return }
+  if (!data.name && !playLink) { $("dlgErr").textContent = t("errName"); return }
+  if (!data.next_charge) { $("dlgErr").textContent = t("errDate"); return }
+  if (!data.amount) { $("dlgErr").textContent = t("errAmount"); return }
 
   $("saveBtn").disabled = true
-  $("saveBtn").textContent = playLink && !data.name ? "Çekiliyor…" : "Kaydediliyor…"
+  $("saveBtn").textContent = t(playLink && !data.name ? "fetching" : "saving")
   try {
     await api(editing ? `${COL}/${editing.id}` : COL, {
       method: editing ? "PATCH" : "POST",
@@ -588,12 +707,12 @@ async function save() {
     $("dlgErr").textContent = err.message
   } finally {
     $("saveBtn").disabled = false
-    $("saveBtn").textContent = "Kaydet"
+    $("saveBtn").textContent = t("save")
   }
 }
 
 async function remove() {
-  if (!editing || !confirm(`"${editing.name}" silinsin mi?`)) return
+  if (!editing || !confirm(`"${editing.name}" ${t("confirmDelete")}`)) return
   try {
     await api(`${COL}/${editing.id}`, { method: "DELETE" })
     $("dlg").close()
@@ -612,7 +731,7 @@ async function load() {
 async function start() {
   $("login").classList.add("hidden")
   $("app").classList.remove("hidden")
-  $("list").innerHTML = `<p class="empty">Yükleniyor…</p>`
+  $("list").innerHTML = `<p class="empty">${esc(t("loading"))}</p>`
 
   await loadFx()
   try { await loadCards() } catch (err) { console.error(err) }
@@ -624,8 +743,8 @@ async function start() {
   } catch (err) {
     console.error(err)
     $("list").innerHTML =
-      `<p class="empty">Liste yüklenemedi.<br><b>${esc(err.message)}</b>` +
-      `<br><br><button id="retryBtn">Tekrar dene</button></p>`
+      `<p class="empty">${esc(t("loadFailed"))}<br><b>${esc(err.message)}</b>` +
+      `<br><br><button id="retryBtn">${esc(t("retry"))}</button></p>`
     const retry = $("retryBtn")
     if (retry) retry.onclick = () => start()
   }
@@ -652,6 +771,27 @@ const closeMenu = () => {
   menu.classList.add("hidden")
   $("avatarBtn").setAttribute("aria-expanded", "false")
 }
+$("langSel").value = lang
+$("baseSel").value = base
+$("langSel").onchange = e => {
+  lang = e.target.value
+  localStorage.setItem("subs_lang", lang)
+  applyLang()
+  // Re-render rather than reload: the cycle names, totals and empty states are
+  // all produced in JS and would otherwise keep the previous language.
+  if (items.length || fx) { renderCards(); render() }
+}
+$("baseSel").onchange = e => {
+  base = e.target.value
+  localStorage.setItem("subs_base", base)
+  render()
+}
+// Clicks inside the menu must not reach the document listener that closes it,
+// or picking a language would shut the menu on the way.
+menu.addEventListener("click", e => e.stopPropagation())
+
+applyLang()
+
 $("avatarBtn").onclick = (e) => {
   e.stopPropagation()
   const open = menu.classList.toggle("hidden")
