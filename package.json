@@ -1,0 +1,47 @@
+{
+  "name": "@burakboduroglu/skadi",
+  "version": "0.1.0",
+  "description": "Self-hosted subscription tracking that rides an existing PocketBase instance. Two collections, one summary route, one static page. No database of its own, no container, no telemetry.",
+  "license": "MIT",
+  "author": "Burak Boduroğlu",
+  "type": "module",
+  "bin": {
+    "skadi": "bin/skadi.js"
+  },
+  "files": [
+    "bin",
+    "pb_migrations",
+    "pb_hooks",
+    "pb_public",
+    "glance/widget.en.yml",
+    "glance/widget.tr.yml",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [
+    "subscriptions",
+    "subscription-tracker",
+    "pocketbase",
+    "self-hosted",
+    "selfhosted",
+    "glance",
+    "dashboard",
+    "personal-finance",
+    "cashback",
+    "no-telemetry"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/burakboduroglu/skadi.git"
+  },
+  "homepage": "https://github.com/burakboduroglu/skadi#readme",
+  "bugs": {
+    "url": "https://github.com/burakboduroglu/skadi/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -218,7 +218,7 @@
               <rect x="2" y="5" width="20" height="14" rx="2.5"></rect>
               <path d="M2 10h20"></path><path d="M6 15h4"></path>
             </svg><span data-i18n="cards">Kartlar</span></button>
-          <button id="dashBtn">
+          <button id="dashBtn" class="hidden">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7.5" height="9" rx="1.5"></rect>
@@ -371,7 +371,8 @@ const I18N = {
     errSession: "Oturum düştü", errLogin: "Giriş başarısız",
     errThrottle: "(art arda denediysen 10 sn bekle)",
     fxFailed: "Kur alınamadı — yabancı para tutarları toplama dahil edilmedi.",
-    fxStale: "güncellenemedi", fxUnconverted: "kayıt kursuz"
+    fxStale: "güncellenemedi", fxUnconverted: "kayıt kursuz",
+    dashPrompt: "Dashboard adresi"
   },
   en: {
     app: "Subscriptions", email: "Email", password: "Password", login: "Sign in",
@@ -398,7 +399,8 @@ const I18N = {
     errSession: "Session expired", errLogin: "Sign-in failed",
     errThrottle: "(wait 10s if you retried quickly)",
     fxFailed: "No rates — foreign amounts were left out of the totals.",
-    fxStale: "not refreshed", fxUnconverted: "record(s) without a rate"
+    fxStale: "not refreshed", fxUnconverted: "record(s) without a rate",
+    dashPrompt: "Dashboard address"
   }
 }
 
@@ -810,7 +812,22 @@ $("avatarBtn").innerHTML = initial ||
      <circle cx="12" cy="8" r="3.5"></circle>
      <path d="M4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"></path>
    </svg>`
-$("dashBtn").onclick = () => location.href = "https://glance.burakboduroglu.com.tr/"
+// The dashboard is optional and its address is nobody's business but yours, so
+// it is a stored setting rather than a baked-in URL. Unset, the entry is hidden;
+// clicking it the first time is how you set it.
+let dash = localStorage.getItem("subs_dash") || ""
+function applyDash() {
+  $("dashBtn").classList.toggle("hidden", !dash)
+}
+$("dashBtn").onclick = () => {
+  if (dash) { location.href = dash; return }
+  const entered = prompt(t("dashPrompt"), "https://")
+  if (!entered) return
+  dash = entered.trim()
+  localStorage.setItem("subs_dash", dash)
+  applyDash()
+}
+applyDash()
 $("prevBtn").onclick = () => turnPage(-1)
 $("nextBtn").onclick = () => turnPage(1)
 $("f_newcard").onkeydown = e => { if (e.key === "Enter") addCard() }

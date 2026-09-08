@@ -1,95 +1,137 @@
-# subs-tracker
+<div align="center">
 
-Subscription tracking on `penolox-server`, built on the PocketBase instance that
-already serves `bbp.burakboduroglu.com.tr`. No new service, no new port, no
-Docker, no extra backup target — `pb_data` is already covered by
-`restore-kit.timer`.
+# Skadi
 
-## Shape
+**Subscription tracking that rides a PocketBase instance you already run — two collections, one endpoint, one page.**
 
-| Piece | Where | What it does |
-|---|---|---|
-| `pb_migrations/1788890841_subscriptions.js` | `/opt/pocketbase/pb_migrations/` | Creates `subscriptions` and `fx_rates`. Both have NULL API rules = superuser only. |
-| `pb_hooks/lib/subs.js` | `/opt/pocketbase/pb_hooks/lib/` | Cycle math, FX cache, Google Play icon resolution. |
-| `pb_hooks/subs.pb.js` | `/opt/pocketbase/pb_hooks/` | `GET /api/subs/summary`, `GET /api/subs/rates`, logo-resolving record hooks. |
-| `pb_public/subs/index.html` | `/opt/pocketbase/pb_public/subs/` | The entry form, at `/subs/`. |
-| `glance/subscriptions-widget.yml` | `/etc/glance/glance.yml` | Dashboard widget. |
-| `glance/caddy-block.txt` | `/etc/caddy/Caddyfile` | 404s `/api/subs/summary` from the internet. |
+[![npm](https://img.shields.io/npm/v/@burakboduroglu/skadi?style=flat-square&color=000)](https://www.npmjs.com/package/@burakboduroglu/skadi)
+[![License](https://img.shields.io/npm/l/@burakboduroglu/skadi?style=flat-square&color=000)](LICENSE)
+[![Install size](https://img.shields.io/bundlephobia/min/@burakboduroglu/skadi?style=flat-square&color=000&label=size)](https://www.npmjs.com/package/@burakboduroglu/skadi)
+
+![Self-hosted](https://img.shields.io/badge/self--hosted-only-000?style=flat-square)
+![No telemetry](https://img.shields.io/badge/telemetry-none-000?style=flat-square)
+![PocketBase](https://img.shields.io/badge/PocketBase-0.23+-000?style=flat-square)
+![Bun](https://img.shields.io/badge/Bun-runtime-000?style=flat-square&logo=bun)
+![No Docker](https://img.shields.io/badge/Docker-not_required-000?style=flat-square&logo=docker)
+
+</div>
+
+---
+
+Skadi tracks what you pay every month for the services you subscribe to, and what comes back as cashback. It is not an application you deploy. It is a set of files you drop into a PocketBase directory you already have: two collections, a pair of JSON endpoints written as PocketBase hooks, and a single static HTML page. Nothing else starts, nothing else listens, and nothing else needs backing up.
+
+That framing is the whole point. A dedicated subscription tracker means another container, another database, another volume in your backup, another process competing for RAM on a small box. If PocketBase is already running, all of that is redundant — the database, the auth, the HTTP server, the backup story and the admin UI are sitting there, and Skadi is roughly six hundred lines that use them.
+
+## What it is
+
+You add a subscription by pasting a **link**. Google Play, a Wikipedia article, or a direct image URL — the server resolves it to a name and a logo, so a full entry is usually a link, an amount, and a date. It reads Google Play's `og:image` and `og:title`, resolves a Wikimedia `File:` link through the MediaWiki API, and takes a direct image URL at its own content type rather than guessing from the extension.
+
+Charge dates **advance on their own**. A monthly subscription whose date has passed is rolled forward to the next one, clamped against the day it actually bills on — a subscription charged on the 31st does not sink to the 28th after one February and stay there.
+
+Amounts can be in **TRY, USD, EUR or GBP** and the totals are quoted in whichever of those you pick, converted at rates taken from Yahoo Finance and cached for six hours. Every row keeps the currency it is genuinely charged in; converting that away would hide the fact. When a rate cannot be fetched the last good one is used and labelled as stale — a stale rate is never presented as today's — and anything that cannot be converted is counted and reported rather than silently treated as zero.
+
+**Cashback is a flat per-charge amount** you type in yourself, in the subscription's own currency. There are deliberately no campaign windows, no start and end dates, no expiry alerting. When a deal changes you edit the number.
+
+**The dashboard is optional.** Skadi is complete without one: the page lists every subscription, its totals and its dates. If you happen to run [Glance](https://github.com/glanceapp/glance), `skadi glance` prints a widget — monthly net, yearly net, cashback, and what is due in the next 45 days with each service's logo. If you run something else, `/api/subs/summary` is plain JSON and yours to render. If you run nothing, skip it entirely and never look at that endpoint again.
+
+## Highlights
+
+|     | Feature | How it works |
+| --- | ------- | ------------ |
+| 🧩 | **No infrastructure of its own** | Migrations, hooks and a static page copied into an existing PocketBase. No container, no second database, no extra port. |
+| 🔗 | **Paste a link, get a name and a logo** | Play `og:image`/`og:title`, Wikimedia `File:` through the MediaWiki API, or any direct image detected by content type. |
+| 📅 | **Dates that move themselves** | Passed charges roll forward by cycle, clamped to an anchor day so month-end billing does not drift. |
+| 💱 | **Four currencies, one honest total** | Rates cached six hours; stale rates are labelled, unconvertible rows are counted, never zeroed. |
+| 💸 | **Cashback without ceremony** | One number per subscription. No campaign windows to maintain, because nobody maintains them. |
+| 🔒 | **Superuser-only by default** | Both collections ship with null API rules. An anonymous or ordinary token gets 403 before any proxy is involved. |
+| 🛰️ | **A summary endpoint with no way in** | Any dashboard reads it over loopback; one proxy line 404s it from the internet. |
+| 📊 | **Dashboard optional** | Glance widget included, plain JSON for anything else, and nothing at all is a supported choice. |
+| 🌍 | **Turkish and English** | Two dictionaries and a lookup. No i18n runtime, no build step. |
+| 📵 | **No telemetry, no accounts, no phoning home** | The only outbound requests are the FX quote and the logo you asked it to resolve. |
+| 🪶 | **Small** | One HTML file, two hook files, three migrations. No bundler, no framework, no dependencies. |
+
+## Install
+
+Skadi ships on npm but installs nothing into your project — it is a set of files and a copier. Run it with **Bun**:
+
+```bash
+bunx @burakboduroglu/skadi install /path/to/pocketbase
+```
+
+That writes `pb_migrations/`, `pb_hooks/` and `pb_public/subs/`. It never reads or writes `pb_data/`, and it refuses to run against a directory holding neither a `pocketbase` binary nor a `pb_data`, so a mistyped path cannot scatter files somewhere unrelated.
+
+Or keep it around:
+
+```bash
+bun add -g @burakboduroglu/skadi
+skadi install /path/to/pocketbase
+```
+
+Then restart PocketBase so the migrations run. **If it was already running, stop it before copying and start it afterwards** — PocketBase watches `pb_hooks` and restarts itself when those files change, which races a service manager trying to do the same and can hang the stop until it times out.
+
+The page is then served at `/subs/`. Two config snippets are yours to place, and the tool prints both:
+
+```bash
+skadi caddy    # required: keeps the summary endpoint off the internet
+```
+
+And, **only if you want a dashboard**:
+
+```bash
+skadi glance --url https://your.host/subs/            # English widget
+skadi glance --url https://your.host/subs/ --lang tr  # Turkish
+```
+
+Not using Glance changes nothing about the install. Note that it makes `skadi caddy` *more* important, not less: the summary endpoint exists either way, and if nothing of yours is reading it, an exposed one is pure downside.
+
+## How it works
+
+```
+browser ──▶ /subs/            static page, superuser login, token in localStorage
+        └─▶ /api/collections/subscriptions   superuser-only CRUD
+        └─▶ /api/subs/rates                  superuser-only, FX for the totals
+
+dashboard ─▶ 127.0.0.1:8090/api/subs/summary  no auth, unreachable from outside
+```
+
+`subscriptions` holds the contracts, `cards` the payment methods you pick from instead of retyping, and `fx_rates` a single row of cached quotes that is updated in place and swept to one row on every refresh.
+
+`GET /api/subs/summary` is the only unauthenticated route. It takes no token because the dashboard talks to PocketBase directly rather than through your proxy — which means the proxy line that 404s it removes the only path in from outside. **Drop that line and the endpoint is public.** It is the one piece of this that fails open, so it is called out here rather than buried.
 
 ## Security model
 
-Two independent gates, either of which is sufficient:
+Two independent layers, either sufficient on its own:
 
-1. **Cloudflare Access** on `/subs*` and `/api/collections/subscriptions*`,
-   same one-time-PIN policy as `/_/`.
-2. **PocketBase superuser-only rules.** The collections have no list/view/create/
-   update/delete rule, which in PocketBase means only a superuser token passes.
-   An anonymous or ordinary-user token gets 403 even if Access were misconfigured.
+1. **PocketBase rules.** Both collections have no list, view, create, update or delete rule, which in PocketBase means superuser only. Anonymous and ordinary user tokens get 403 with no proxy involved.
+2. **Whatever you put in front.** The page at `/subs/` is a login form anyone can reach until you gate it. Cloudflare Access, basic auth, a VPN — Skadi does not care, but it does not ship one.
 
-`GET /api/subs/summary` is the one unauthenticated route, and it is unreachable
-from outside: Caddy answers 404 for exactly that path, and Glance talks to
-PocketBase directly on `127.0.0.1:8090`, never through Caddy.
+The page authenticates as a **superuser** and keeps that token in `localStorage`. That is a deliberate trade for a single-operator tool, and it is why every field rendered into the list is escaped: a name can arrive from a Google Play listing rather than from your keyboard.
 
-`GET /api/subs/rates` is superuser-only and stays reachable, because the entry
-form needs it. The form cannot call Yahoo itself — Yahoo sends no CORS headers —
-and pointing the browser at a different FX provider would let the form and the
-dashboard report different totals for the same data.
+## No telemetry
 
-Note: the existing edge rate limit on `/api/collections/_superusers*` (5 req /
-10 s) also covers the form's login call. The token is cached in localStorage, so
-this only bites on repeated failed logins.
+There is no analytics, no crash reporting, no update check, no account, and no vendor. The server makes exactly two kinds of outbound request, both of which you can name in advance:
 
-## Data model
+- a quote from Yahoo Finance, at most once every six hours;
+- a fetch of the link you just pasted, to read its title and icon, once per save.
 
-`subscriptions` — name, category, amount, currency (TRY/USD/EUR/GBP), cashback,
-cycle (weekly/monthly/quarterly/yearly), next_charge, payment_method, status,
-vendor_url, logo_url, notes.
+Nothing about your subscriptions leaves the machine you installed it on.
 
-**Cashback is a plain per-charge amount in the subscription's own currency.**
-There is deliberately no campaign start/end window and no expiry alerting: the
-number is entered once and edited by hand when the campaign changes. Anything
-more was explicitly cut as unwanted complexity.
+## What it deliberately does not do
 
-`fx_rates` — one row, TRY-per-unit rates from Yahoo Finance
-(`query1.finance.yahoo.com/v8/finance/chart/USDTRY=X` and friends). This is the
-same source Glance's `markets` widget on this box already uses, so no new third
-party is introduced, and it quotes the TRY pairs directly with no cross-rate
-arithmetic. Refreshed lazily on read when older than 6 h. A failed refresh keeps
-the last good rates and sets `fx_stale`, which both the widget and the form
-surface; a stale rate is never presented as today's.
+Saying this plainly is cheaper than you finding out:
 
-Yahoo's chart endpoint is undocumented and could change. The failure mode is
-already handled — stale rates plus a visible warning — which is why a second
-provider was not added.
+- **No reminders.** Upcoming charges are visible on the dashboard and nowhere else. No email, no push, no calendar feed.
+- **No campaign expiry tracking.** Cashback is a number you maintain.
+- **No scheduled job.** Rates refresh when something asks for them; the dashboard's polling is what keeps them warm.
+- **No multi-user.** One superuser, one set of subscriptions.
+- **No import.** You type them in once.
 
-Amounts that cannot be converted are counted in `unconverted` rather than
-silently treated as zero.
+## Stack
 
-## Logos
+**PocketBase** for storage, auth, HTTP and backups. **JavaScript** in PocketBase's own hook runtime for the two endpoints, and one dependency-free HTML page for the UI — no framework, no bundler, no CSS library, no i18n runtime. **Bun** as the package manager. Glance is supported, not required, and nothing in the install depends on it.
 
-Paste a Google Play listing URL into `vendor_url` and leave `logo_url` empty; on
-save a hook reads the listing's `og:image` and stores the icon URL rewritten to
-`=s256`. These `play-lh.googleusercontent.com` URLs are content-addressed, so a
-vendor rebrand publishes a new icon at a new URL and the old one keeps resolving.
+The name is Skaði, the Norse goddess of winter and the mountains, who took a settlement in compensation and chose by looking only at the feet. It seemed apt for something that makes you look at what you are actually paying.
 
-The icon is linked, not downloaded, because PocketBase file access follows the
-collection's view rule — a self-hosted logo behind superuser-only rules could not
-be loaded by the widget's `<img>` without opening the collection to the public.
+## License
 
-## Deploy
-
-Files are staged to `/tmp/subs` by the agent; every step below is run by Burak.
-See the session transcript for the paste-ready blocks in order:
-
-1. Back up `pb_data`, install migrations/hooks/public, restart `pocketbase`.
-2. Verify the migration applied and `/api/subs/summary` answers on loopback.
-3. Add the `respond /api/subs/summary 404` line to the Caddyfile, reload Caddy.
-4. Add the widget to `glance.yml`, restart `glance`.
-5. Add the Cloudflare Access policy paths for `/subs*` and
-   `/api/collections/subscriptions*`.
-
-## Verify
-
-	curl -s http://127.0.0.1:8090/api/subs/summary | head -c 300          # JSON, on the box
-	curl -s -o /dev/null -w '%{http_code}\n' https://bbp.burakboduroglu.com.tr/api/subs/summary   # 404
-	curl -s -o /dev/null -w '%{http_code}\n' https://bbp.burakboduroglu.com.tr/api/collections/subscriptions/records  # 403 or Access redirect
+MIT — see [LICENSE](LICENSE).
