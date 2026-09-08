@@ -53,10 +53,12 @@
     padding: 6px; box-shadow: 0 14px 34px #000a;
   }
   .menu button {
-    display: block; width: 100%; height: 40px; min-height: 40px; text-align: left;
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; height: 40px; min-height: 40px; text-align: left;
     background: transparent; color: var(--text); font-weight: 500; border-radius: 8px;
     padding: 0 12px;
   }
+  .menu svg { width: 17px; height: 17px; flex: none; opacity: .8; }
   .menu button:hover { background: var(--raise); }
   .menu button.out { color: var(--neg); }
   button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 500; }
@@ -182,9 +184,26 @@
         <button id="addBtn">+ Ekle</button>
         <button class="avatar" id="avatarBtn" aria-haspopup="menu" aria-expanded="false"></button>
         <div class="menu hidden" id="menu" role="menu">
-          <button id="cardsBtn">Kartlar</button>
-          <button id="dashBtn">Dashboard</button>
-          <button id="logoutBtn" class="out">Çıkış</button>
+          <button id="cardsBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2.5"></rect>
+              <path d="M2 10h20"></path><path d="M6 15h4"></path>
+            </svg>Kartlar</button>
+          <button id="dashBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7.5" height="9" rx="1.5"></rect>
+              <rect x="13.5" y="3" width="7.5" height="5" rx="1.5"></rect>
+              <rect x="3" y="15" width="7.5" height="6" rx="1.5"></rect>
+              <rect x="13.5" y="11" width="7.5" height="10" rx="1.5"></rect>
+            </svg>Glance</button>
+          <button id="logoutBtn" class="out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 17l5-5-5-5"></path><path d="M20 12H9"></path>
+              <path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"></path>
+            </svg>Çıkış</button>
         </div>
       </div>
     </header>
@@ -362,11 +381,12 @@ function renderFx(unknown) {
     $("fxNote").textContent = "Kur alınamadı — yabancı para tutarları toplama dahil edilmedi."
     return
   }
-  const parts = ["USD", "EUR", "GBP"].filter(c => fx[c]).map(c => `${c} ${rate(fx[c])} ₺`)
+  const SYMBOL = { USD: "$", EUR: "€", GBP: "£" }
+  const parts = ["USD", "EUR", "GBP"].filter(c => fx[c]).map(c => `${SYMBOL[c]} ${rate(fx[c])} ₺`)
   if (fxMeta.date) parts.push(fxMeta.date)
   if (fxMeta.stale) parts.push("güncellenemedi, son bilinen kur")
   if (unknown) parts.push(`${unknown} kayıt kur olmadığı için toplama girmedi`)
-  $("fxNote").textContent = parts.join("  ·  ")
+  $("fxNote").textContent = parts.join("  |  ")
 }
 
 // Rates are TRY per one unit of the currency.
