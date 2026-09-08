@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/burakboduroglu/skadi/main/assets/logo.png" alt="Skadi logo" width="128">
+
 # Skadi
 
 **Subscription tracking that rides a PocketBase instance you already run — two collections, one endpoint, one page.**

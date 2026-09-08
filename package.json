@@ -1,6 +1,6 @@
 {
   "name": "@burakboduroglu/skadi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Self-hosted subscription tracking that rides an existing PocketBase instance. Two collections, one summary route, one static page. No database of its own, no container, no telemetry.",
   "license": "MIT",
   "author": "Burak Boduroğlu",
