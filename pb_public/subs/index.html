@@ -36,15 +36,29 @@
   button.danger { background: transparent; color: var(--neg); border: 1px solid var(--line); font-weight: 500; }
 
   input, select, textarea {
-    width: 100%; background: var(--bg); color: var(--text);
+    /* A fixed height rather than min-height, and appearance:none on all three:
+       select and input[type=date] otherwise size themselves from their own
+       browser chrome and end up taller than a plain text input. */
+    width: 100%; height: 44px; box-sizing: border-box;
+    background: var(--bg); color: var(--text);
     border: 1px solid var(--line); border-radius: 10px;
     /* 16px keeps iOS Safari from zooming the page on focus. */
-    padding: 11px 12px; font: inherit; font-size: 16px; min-height: 44px;
+    padding: 0 12px; font: inherit; font-size: 16px; line-height: 42px;
+    -webkit-appearance: none; appearance: none;
   }
+  select {
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                      linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 17px) 20px, calc(100% - 12px) 20px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 32px;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.6); }
   input:focus, select:focus, textarea:focus {
     outline: none; border-color: var(--accent);
   }
-  textarea { min-height: 66px; resize: vertical; }
+  textarea { height: 88px; line-height: 1.5; padding: 10px 12px; resize: vertical; }
   /* A fixed label box keeps every cell the same height even when one label is
      longer than its neighbour, so paired fields always line up. */
   label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px;
@@ -129,7 +143,6 @@
     <div class="field"><label>Parola</label><input id="password" type="password" autocomplete="current-password"></div>
     <p class="err" id="loginErr"></p>
     <button id="loginBtn" style="width:100%">Giriş</button>
-    <p class="note">PocketBase superuser hesabınla giriş yapılır.</p>
   </div>
 
   <div id="app" class="hidden">
@@ -159,25 +172,25 @@
 
     <div class="grid">
       <div class="field"><label>Link</label>
-        <input id="f_vendor_url" inputmode="url" placeholder="Play, Wikipedia veya resim"></div>
+        <input id="f_vendor_url" inputmode="url"></div>
       <div class="field"><label>Ad</label>
-        <input id="f_name" placeholder="Otomatik"></div>
+        <input id="f_name"></div>
 
-      <div class="field"><label>Tutar *</label>
+      <div class="field"><label>Tutar</label>
         <input id="f_amount" type="number" inputmode="decimal" step="0.01" min="0"></div>
-      <div class="field"><label>Para birimi</label><select id="f_currency">
+      <div class="field"><label>Birim</label><select id="f_currency">
         <option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
 
       <div class="field"><label>Periyot</label><select id="f_cycle">
         <option value="monthly">Aylık</option><option value="yearly">Yıllık</option>
         <option value="quarterly">3 aylık</option><option value="weekly">Haftalık</option></select></div>
-      <div class="field"><label>Sonraki ödeme *</label>
+      <div class="field"><label>Tarih</label>
         <input id="f_next_charge" type="date"></div>
 
       <div class="field"><label>Cashback</label>
-        <input id="f_cashback" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
-      <div class="field"><label>Ödeme yöntemi</label>
-        <input id="f_payment_method" placeholder="Örn. Garanti Bonus"></div>
+        <input id="f_cashback" type="number" inputmode="decimal" step="0.01" min="0"></div>
+      <div class="field"><label>Kart</label>
+        <input id="f_payment_method"></div>
 
       <div class="field"><label>Kategori</label><select id="f_category">
         <option value="">—</option><option>Yazılım</option><option>Medya</option><option>Oyun</option>
@@ -191,11 +204,8 @@
     <div class="field"><label>Not</label><textarea id="f_notes" rows="2"></textarea></div>
 
     <div class="logo-preview hidden" id="logoPreview">
-      <img id="logoImg" alt=""><span class="note" style="margin:0">Logo</span>
+      <img id="logoImg" alt="">
     </div>
-    <p class="note">Linki yapıştır, ad ve logo otomatik gelir. Logo yanlışsa linki değiştir —
-      her kayıtta yeniden çözülür. Cashback her ödemede geri gelen tutardır.</p>
-
     <p class="err" id="dlgErr"></p>
   </div>
 
