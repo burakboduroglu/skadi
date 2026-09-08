@@ -140,6 +140,23 @@ function fetchRates() {
   return out
 }
 
+// A json field does not come back from the record as a parsed object, so the
+// cached rates have to be decoded before they can be indexed. Reading them raw
+// made every non-TRY amount unconvertible, but only when served from cache -
+// a fresh fetch returns a real object and worked, which is why the failure
+// looked intermittent.
+function readRates(rec) {
+  const raw = rec.get("rates")
+  if (!raw) return null
+  if (typeof raw === "object") return raw
+  try {
+    return JSON.parse(typeof raw === "string" ? raw : toString(raw))
+  } catch (err) {
+    console.log("[subs] cached rates unreadable: " + err)
+    return null
+  }
+}
+
 // Read the cached rates, refreshing them when older than six hours.
 //
 // A failed refresh is never fatal: the last good rates are returned with
@@ -157,7 +174,10 @@ function rates(app) {
   const fetchedAt = rec ? parseDate(rec.getString("fetched")) : null
   const fresh = fetchedAt && (now.getTime() - fetchedAt.getTime()) < FX_MAX_AGE_MS
   if (rec && fresh) {
-    return { rates: rec.get("rates"), date: rec.getString("fetched"), stale: false }
+    const cached = readRates(rec)
+    // An unreadable cache is treated as no cache, so it refetches rather than
+    // silently reporting every foreign amount as unconvertible.
+    if (cached) return { rates: cached, date: rec.getString("fetched"), stale: false }
   }
 
   try {
@@ -185,8 +205,9 @@ function rates(app) {
     return { rates: fetched, date: rec.getString("fetched"), stale: false }
   } catch (err) {
     console.log("[subs] fx refresh failed: " + err)
-    if (rec && rec.get("rates")) {
-      return { rates: rec.get("rates"), date: rec.getString("fetched"), stale: true }
+    const cached = rec ? readRates(rec) : null
+    if (cached) {
+      return { rates: cached, date: rec.getString("fetched"), stale: true }
     }
     // Nothing cached and nothing fetched: refuse to invent a rate.
     return { rates: null, date: null, stale: true }
