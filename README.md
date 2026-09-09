@@ -65,7 +65,7 @@ Measured on a 2 vCPU / 3.7 GiB Debian box running PocketBase 0.40:
 
 | | |
 | --- | --- |
-| Installed files | **76 KB** — migrations 12 KB, hooks 24 KB, page 40 KB |
+| Installed files | **96 KB** — migrations 12 KB, hooks 24 KB, page 60 KB |
 | Database growth | **~45 KB** for the three collections plus a handful of subscriptions |
 | Resident memory | **~22 MB**, and that is the whole PocketBase process |
 | Extra processes | none |
@@ -135,12 +135,28 @@ something asks. No multi-user. No import.
 ## Stack
 
 PocketBase for storage, auth, HTTP and backups. JavaScript in PocketBase's hook
-runtime, and one dependency-free HTML page — no framework, no bundler, no CSS
-library. Bun as the package manager.
+runtime, and a SolidJS + Vite UI compiled to static files under
+`pb_public/subs/` — no CSS library, no UI server. Bun as the package manager.
 
 The name is Skaði, the Norse goddess of winter and the mountains, who chose a
 husband by looking only at the feet. Apt for something that makes you look at
 what you are actually paying.
+
+## Develop the UI
+
+Source lives in `web/` (SolidJS + Vite, visual language shared with Nors).
+The shipped page is built output — `pb_public/subs/` is committed, so rebuild
+before pushing (`bun run build` from the repo root); CI fails on drift.
+
+```bash
+bun --cwd web install
+bun run build      # root script — emits pb_public/subs/
+bun run dev        # local UI; /api proxied to :8090 (SKADI_PB_PORT to move it)
+```
+
+Against a tunneled production box: `ssh -N -L 8090:127.0.0.1:8090 hetzner`,
+then `bun run dev` — the browser stays on localhost, so neither CORS nor
+Cloudflare Access is in the path.
 
 ## Contributing
 

@@ -1,10 +1,15 @@
 {
   "name": "@burakboduroglu/skadi",
-  "version": "0.1.2",
-  "description": "Self-hosted subscription tracking that rides an existing PocketBase instance. Two collections, one summary route, one static page. No database of its own, no container, no telemetry.",
+  "version": "0.1.3",
   "license": "MIT",
   "author": "Burak Boduroğlu",
   "type": "module",
+  "scripts": {
+    "dev": "bun --cwd web dev",
+    "build": "bun --cwd web build",
+    "prepack": "bun --cwd web build",
+    "preview": "bun --cwd web preview"
+  },
   "bin": {
     "skadi": "bin/skadi.js"
   },

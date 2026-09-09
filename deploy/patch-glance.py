@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Place the subscriptions widget in the Services page's left-hand column.
+"""Place the Skadi subscriptions widget on the Apps page's left column.
+
+As of 2026-09-09 Apps sits between Home and Services. Personal PocketBase apps
+(widgets + deep links) live there; Services keeps monitors and bookmark groups.
 
 The block is fenced with sentinel comments, so a re-run replaces it wherever it
-currently sits - including moving it off the Home page, where it lived first.
-Anchored on the first 'size: full' column that follows the Services page header,
-which is the end of that page's small column.
+currently sits. If the Apps page is missing, abort — use
+`nors/deploy/patch-glance-apps.py` to create the page first.
 """
 import datetime
 import pathlib
@@ -12,7 +14,7 @@ import shutil
 import sys
 
 PATH = pathlib.Path("/etc/glance/glance.yml")
-PAGE = "  - name: Services"
+PAGE = "  - name: Apps"
 COLUMN_END = "      - size: full"
 OPEN = "          # >>> subs-tracker (managed, do not hand-edit) >>>"
 CLOSE = "          # <<< subs-tracker <<<"
@@ -41,11 +43,14 @@ if OPEN in lines:
 
 pages = [i for i, ln in enumerate(lines) if ln == PAGE]
 if len(pages) != 1:
-    sys.exit(f"expected exactly one '{PAGE}' line, found {len(pages)} - not touching the file")
+    sys.exit(
+        f"expected exactly one '{PAGE}' line, found {len(pages)} — "
+        "create the Apps page with nors/deploy/patch-glance-apps.py first"
+    )
 
 ends = [i for i, ln in enumerate(lines) if ln == COLUMN_END and i > pages[0]]
 if not ends:
-    sys.exit(f"no '{COLUMN_END}' after the Services page - not touching the file")
+    sys.exit(f"no '{COLUMN_END}' after the Apps page - not touching the file")
 
 i = ends[0]
 block = ["", OPEN] + WIDGET.split("\n") + [CLOSE, ""]
@@ -62,4 +67,4 @@ backup = PATH.with_name(f"{PATH.name}.bak-{datetime.datetime.now():%Y%m%d-%H%M%S
 shutil.copy2(PATH, backup)
 PATH.write_text(new)
 print(f"backed up to {backup}")
-print(f"inserted {len(block)} lines before line {i + 1} (Services page, small column)")
+print(f"inserted {len(block)} lines before line {i + 1} (Apps page, small column)")
