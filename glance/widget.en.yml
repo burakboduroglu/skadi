@@ -4,7 +4,7 @@
 # PocketBase as Glance can reach it - loopback when they share a host, which is
 # what lets the summary endpoint stay off the public internet.
           - type: custom-api
-            title: Subscriptions
+            title: Skadi
             title-url: __SKADI_URL__
             cache: 30m
             url: http://127.0.0.1:8090/api/subs/summary

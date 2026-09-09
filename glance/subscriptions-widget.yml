@@ -4,7 +4,7 @@
 # box. /api/subs/summary is 404'd at the Caddy layer, which is what keeps this route
 # private while still letting Glance read it.
 - type: custom-api
-  title: Abonelikler
+  title: Skadi
   cache: 30m
   url: http://127.0.0.1:8090/api/subs/summary
   template: |
