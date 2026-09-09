@@ -1,6 +1,6 @@
 name: release
 
-# Tag push (v0.1.3) publishes to npm with OIDC trusted publishing — no token.
+# A version tag push publishes to npm with OIDC trusted publishing — no token.
 # One-time setup on npmjs.com: package → Settings → Trusted publisher → GitHub
 # Actions → burakboduroglu/skadi, workflow release.yml.
 # Do not set setup-node's registry-url here: it exports a placeholder
