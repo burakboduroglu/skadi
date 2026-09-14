@@ -51,13 +51,41 @@ export function clearSession(): void {
   localStorage.removeItem(TOKEN_KEY)
 }
 
+/** Fired on window when PocketBase rejects the stored token; App returns to login. */
+export const SESSION_EXPIRED = 'skadi:session-expired'
+
+const ACCESS_RELOAD_KEY = 'skadi_access_reload'
+
+/**
+ * fetch that survives Cloudflare Access. An expired Access session answers API
+ * calls with a cross-origin redirect to the Access login, which fetch cannot
+ * follow; reloading lets the browser run that login. The pending promise never
+ * settles so callers show no error toast in the moment before the reload.
+ */
+async function edgeFetch(url: string, opts: RequestInit): Promise<Response> {
+  const res = await fetch(url, { ...opts, redirect: 'manual' })
+  if (res.type === 'opaqueredirect') {
+    // Reload once; if Access still redirects right after, stop instead of looping.
+    const last = Number(sessionStorage.getItem(ACCESS_RELOAD_KEY) || 0)
+    if (Date.now() - last < 30_000) throw new Error('Cloudflare Access session expired. Reload the page to sign in again.')
+    sessionStorage.setItem(ACCESS_RELOAD_KEY, String(Date.now()))
+    location.reload()
+    return new Promise<Response>(() => {})
+  }
+  return res
+}
+
 export async function api<T>(url: string, opts: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, {
+  const res = await edgeFetch(url, {
     ...opts,
     headers: { 'Content-Type': 'application/json', Authorization: getToken(), ...(opts.headers || {}) },
   })
+  // PocketBase treats a missing or expired token as a guest: superuser-only
+  // collections answer 403 and auth-required routes 401. Both mean log in again,
+  // wherever the call came from (list, dialog, cards, rates).
   if (res.status === 401 || res.status === 403) {
     clearSession()
+    window.dispatchEvent(new Event(SESSION_EXPIRED))
     throw new Error('session expired')
   }
   const body = res.status === 204 ? null : await res.json()
@@ -66,7 +94,7 @@ export async function api<T>(url: string, opts: RequestInit = {}): Promise<T> {
 }
 
 export async function login(email: string, password: string, throttleHint: string): Promise<void> {
-  const res = await fetch(`${baseUrl()}/api/collections/_superusers/auth-with-password`, {
+  const res = await edgeFetch(`${baseUrl()}/api/collections/_superusers/auth-with-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identity: email.trim(), password }),

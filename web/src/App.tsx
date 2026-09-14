@@ -1,6 +1,6 @@
 import { createEffect, createResource, createSignal, For, onCleanup, onMount, Show } from 'solid-js'
 import type { Component } from 'solid-js'
-import { clearSession, getEmail, getToken, listCards, listSubs, loadFx, login } from './lib/api'
+import { clearSession, getEmail, getToken, listCards, listSubs, loadFx, login, SESSION_EXPIRED } from './lib/api'
 import type { Card, FxState, Subscription } from './lib/api'
 import { CYCLE_MONTHS, SYMBOL, categoryName, cycleName, fmt, money, rate, t, toTRY } from './lib/i18n'
 import type { Base, Lang } from './lib/i18n'
@@ -95,10 +95,8 @@ const App: Component = () => {
     try {
       return await listSubs()
     } catch (e) {
-      if (e instanceof Error && e.message === 'session expired') {
-        bye()
-        return [] as Subscription[]
-      }
+      // The SESSION_EXPIRED listener already signed out; do not flash an error.
+      if (e instanceof Error && e.message === 'session expired') return [] as Subscription[]
       setListErr(e instanceof Error ? e.message : String(e))
       return [] as Subscription[]
     }
@@ -126,11 +124,19 @@ const App: Component = () => {
     const esc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenu(false)
     }
+    const expired = () => {
+      setMenu(false)
+      setDlgOpen(false)
+      setCardsOpen(false)
+      bye()
+    }
     document.addEventListener('click', outside)
     document.addEventListener('keydown', esc)
+    window.addEventListener(SESSION_EXPIRED, expired)
     onCleanup(() => {
       document.removeEventListener('click', outside)
       document.removeEventListener('keydown', esc)
+      window.removeEventListener(SESSION_EXPIRED, expired)
     })
     // ?add=1 deep-links straight onto the form (the external Glance widget uses it).
     if (token() && new URLSearchParams(location.search).get('add')) {
