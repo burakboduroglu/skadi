@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "bun --cwd web dev",
     "build": "bun --cwd web build",
+    "test": "bun --cwd web test",
     "prepack": "bun --cwd web build",
     "preview": "bun --cwd web preview"
   },

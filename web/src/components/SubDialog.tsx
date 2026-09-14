@@ -14,6 +14,7 @@ const CURRENCIES = ['TRY', 'USD', 'EUR', 'GBP']
 
 function defaults(item: Subscription | null): Record<string, string> {
   const get = (f: string) => {
+    // SAFETY: f is restricted to Subscription field names by the defaults list below.
     let v = item ? ((item as unknown as Record<string, unknown>)[f] ?? '') : ''
     if (f === 'next_charge' && v) v = String(v).substring(0, 10)
     return String(v)
@@ -107,11 +108,13 @@ const SubDialog: Component<{
     }
     const amount = parseFloat(String(data.amount) || '0')
     const cashback = parseFloat(String(data.cashback) || '0')
-    // Name may be blank when a Play link can supply it; the server fills it in.
-    const playLink = form.vendor_url.includes('play.google.com')
-    if (!data.name && !playLink) return setErr(L('errName'))
+    // Name may be blank when a vendor link can supply its page title; the
+    // server resolves og:title (not only Google Play) before saving.
+    const hasVendorLink = form.vendor_url.trim().length > 0
+    if (!data.name && !hasVendorLink) return setErr(L('errName'))
     if (!data.next_charge) return setErr(L('errDate'))
-    if (!amount) return setErr(L('errAmount'))
+    if (Number.isNaN(amount) || amount < 0) return setErr(L('errAmount'))
+    if (Number.isNaN(cashback) || cashback < 0) return setErr(L('errAmount'))
 
     setBusy(true)
     try {
@@ -139,8 +142,8 @@ const SubDialog: Component<{
 
   const saveLabel = () => {
     if (!busy()) return L('save')
-    const playLink = form.vendor_url.includes('play.google.com')
-    return L(playLink && !form.name ? 'fetching' : 'saving')
+    const hasVendorLink = form.vendor_url.trim().length > 0
+    return L(hasVendorLink && !form.name ? 'fetching' : 'saving')
   }
 
   return (
