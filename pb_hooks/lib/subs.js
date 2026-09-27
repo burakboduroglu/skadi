@@ -331,13 +331,16 @@ function resolveLink(url) {
 // instead of failing the save the user is trying to make.
 function applyDerived(record) {
   try {
-    // The link is authoritative for the logo: re-resolved on every save, so
-    // pasting a better link is how you fix a wrong logo. A failed lookup leaves
-    // the existing logo alone rather than clearing it.
+    // The link is authoritative for the logo: re-resolved whenever it changes,
+    // so pasting a better link is how you fix a wrong logo. An unchanged link
+    // is only retried while there is no logo yet - otherwise every edit of an
+    // amount or a date would wait on up to two outbound requests. A failed
+    // lookup leaves the existing logo alone rather than clearing it.
     // The name is only ever filled in when blank - a name typed by hand outranks
     // whatever a page calls itself.
     const link = record.getString("vendor_url")
-    if (link) {
+    const previous = record.original().getString("vendor_url")
+    if (link && (link !== previous || !record.getString("logo_url"))) {
       const meta = resolveLink(link)
       if (meta) {
         if (meta.icon) record.set("logo_url", meta.icon)
