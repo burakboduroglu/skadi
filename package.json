@@ -8,7 +8,8 @@
     "dev": "bun --cwd web dev",
     "build": "bun --cwd web build",
     "prepack": "bun --cwd web build",
-    "preview": "bun --cwd web preview"
+    "preview": "bun --cwd web preview",
+    "test": "cd web && bun test"
   },
   "bin": {
     "skadi": "bin/skadi.js"
