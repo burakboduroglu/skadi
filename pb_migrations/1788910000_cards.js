@@ -5,7 +5,7 @@
 // payment_method stays a text field on subscriptions rather than becoming a
 // relation: the values already stored are text, and a relation migration would
 // have to rewrite them in place. The form offers this list as a dropdown, which
-// is what actually prevents "getirfinans" and "Getirfinans" becoming two things.
+// is what actually prevents "visa" and "Visa" becoming two things.
 migrate((app) => {
   const cards = new Collection({
     name: "cards",
@@ -29,11 +29,9 @@ migrate((app) => {
     app.save(rec)
   }
 
-  add("getirfinans")
-  add("Garanti Bonus")
-
   // Backfill whatever is already on the subscriptions, so no existing value is
-  // stranded outside the list the form can offer.
+  // stranded outside the list the form can offer. A fresh install starts with
+  // an empty list; cards are added from the form.
   try {
     const subs = app.findRecordsByFilter("subscriptions", "payment_method != ''", "", 500, 0)
     for (const s of subs) add(s.getString("payment_method"))
