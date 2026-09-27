@@ -145,13 +145,14 @@ what you are actually paying.
 ## Develop the UI
 
 Source lives in `web/` (SolidJS + Vite, visual language shared with Nors).
-The shipped page is built output — `pb_public/subs/` is committed, so rebuild
-before pushing (`bun run build` from the repo root); CI fails on drift.
+The shipped page is built output — `pb_public/subs/` is not committed; `prepack`
+builds it into the npm tarball, and CI builds it and runs the tests on every push.
 
 ```bash
 bun --cwd web install
 bun run build      # root script — emits pb_public/subs/
 bun run dev        # local UI; /api proxied to :8090 (SKADI_PB_PORT to move it)
+bun run test       # unit tests (bun test)
 ```
 
 Against a tunneled production box: `ssh -N -L 8090:127.0.0.1:8090 hetzner`,

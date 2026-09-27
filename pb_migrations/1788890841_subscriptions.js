@@ -2,7 +2,7 @@
 
 // Subscription tracker: two collections.
 //   subscriptions - the contracts themselves
-//   fx_rates      - a single-row daily cache of EUR-based rates
+//   fx_rates      - a single-row cache of TRY-based rates, refreshed after six hours
 //
 // Both collections deliberately have NULL API rules, which in PocketBase means
 // "superuser only". Nothing is readable or writable with an anonymous or a
